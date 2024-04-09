@@ -18,7 +18,3 @@
     path = lib/stb
     url = https://github.com/nothings/stb.git
     branch = main
-[submodule "lib/bullet"]
-    path = lib/bullet
-    url = https://github.com/bulletphysics/bullet3.git
-    branch = main
