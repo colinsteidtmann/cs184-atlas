@@ -4,3 +4,5 @@ terrain-generator.xcodeproj/*
 !terrain-generator.xcodeproj/project.pbxproj
 build/*
 .vscode/*
+cmake-build-release-visual-studio/*
+.idea/*

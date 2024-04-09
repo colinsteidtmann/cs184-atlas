@@ -60,8 +60,8 @@ GLFWwindow *window;
 // Map params
 float WATER_HEIGHT = 0.1;
 int chunk_render_distance = 3;
-int xMapChunks = 10;
-int yMapChunks = 10;
+const int xMapChunks = 10;
+const int yMapChunks = 10;
 int chunkWidth = 127;
 int chunkHeight = 127;
 int gridPosX = 0;
@@ -106,7 +106,7 @@ int main() {
     if (init() != 0)
         return -1;
     
-    Shader objectShader("objectShader.vert", "objectShader.frag");
+    Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
     
     // Default to coloring to flat mode
     objectShader.use();
@@ -131,8 +131,8 @@ int main() {
     std::vector<GLuint> tree_chunks(xMapChunks * yMapChunks);
     std::vector<GLuint> flower_chunks(xMapChunks * yMapChunks);
     
-    setup_instancing(treeVAO, tree_chunks, "tree", plants, "CommonTree_1.obj");
-    setup_instancing(flowerVAO, flower_chunks, "flower", plants, "Flowers.obj");
+    setup_instancing(treeVAO, tree_chunks, "tree", plants, "../resources/obj/CommonTree_1.obj");
+    setup_instancing(flowerVAO, flower_chunks, "flower", plants, "../resources/obj/Flowers.obj");
     
     while (!glfwWindowShouldClose(window)) {
         objectShader.use();
@@ -267,11 +267,10 @@ void load_model(GLuint &VAO, std::string filename) {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
-
     std::string warn;
     std::string err;
 
-    tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str());
+    tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filename.c_str(), "../resources/obj/");
 
     if (!warn.empty()) {
         std::cout << warn << std::endl;
