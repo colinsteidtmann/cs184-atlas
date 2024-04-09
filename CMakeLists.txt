@@ -15,8 +15,13 @@ option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory(lib/assimp)
 
 
-if(NOT WIN32)
-    set(GLAD_LIBRARIES dl)
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic -std=c++11")
+    if(NOT WIN32)
+        set(GLAD_LIBRARIES dl)
+    endif()
 endif()
 
 set(CMAKE_CXX_STANDARD 14)            # enable c++14 standard

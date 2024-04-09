@@ -5,4 +5,5 @@ terrain-generator.xcodeproj/*
 build/*
 .vscode/*
 cmake-build-release-visual-studio/*
+cmake-build-release/*
 .idea/*
