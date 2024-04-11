@@ -656,6 +656,14 @@ void processInput(GLFWwindow *window, Shader &shader) {
         }
     }
 
+    // Disable fod shading with shift + F keys
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        shader.use();
+        for (int i = 0; i < fogTypes.size(); i++) {
+            shader.setBool(fogTypes[i], false);
+        }
+    }
+
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
         shader.use();
