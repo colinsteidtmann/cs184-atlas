@@ -122,7 +122,14 @@ int main() {
     fogShader.setVec3("light.diffuse", 0.3, 0.3, 0.3);
     fogShader.setVec3("light.specular", 1.0, 1.0, 1.0);
     fogShader.setVec3("light.direction", -1.0f, 1.0f, 1.0f);
-    fogShader.setFloat("distance", std::max(chunkWidth, chunkHeight) * chunk_render_distance);
+    fogShader.setFloat("distance", max(chunkWidth, chunkHeight) * chunk_render_distance);
+    fogKeys.push_back(GLFW_KEY_0);
+    fogKeys.push_back(GLFW_KEY_1);
+    fogKeys.push_back(GLFW_KEY_2);
+
+    fogTypes.push_back("isFogLinear");
+    fogTypes.push_back("isFogExponential");
+    fogTypes.push_back("isFogExponentialSquared");
     
     std::vector<GLuint> map_chunks(xMapChunks * yMapChunks);
     
@@ -139,15 +146,6 @@ int main() {
     
     setup_instancing(treeVAO, tree_chunks, "tree", plants, "../resources/obj/CommonTree_1.obj");
     setup_instancing(flowerVAO, flower_chunks, "flower", plants, "../resources/obj/Flowers.obj");
-
-    fogKeys.push_back(GLFW_KEY_0);
-    fogKeys.push_back(GLFW_KEY_1);
-    fogKeys.push_back(GLFW_KEY_2);
-
-    fogTypes.push_back("isFogLinear");
-    fogTypes.push_back("isFogExponential");
-    fogTypes.push_back("isFogExponentialSquared");
-
     
     while (!glfwWindowShouldClose(window)) {
         fogShader.use();
@@ -167,9 +165,9 @@ int main() {
     }
     
     // TODO VBOs and EBOs aren't being deleted
-    // glDeleteBuffers(3, VBO);
-    // glDeleteBuffers(1, &EBO);
-    
+//     glDeleteBuffers(3, VBO);
+//     glDeleteBuffers(1, &EBO);
+
     glfwTerminate();
     
     return 0;
