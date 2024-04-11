@@ -4,6 +4,7 @@
 #include <iostream>
 #include <math.h>
 #include <cstdlib>
+#include <ctime>
 
 #include "glad.h"
 #include <GLFW/glfw3.h>
@@ -76,6 +77,7 @@ float meshHeight = 32;  // Vertical scaling
 float noiseScale = 64;  // Horizontal scaling
 float persistence = 0.5;
 float lacunarity = 2;
+vector<int> p = get_permutation_vector();
 
 // Model params
 float MODEL_SCALE = 3;
@@ -100,6 +102,11 @@ vector<int> fogKeys;
 vector<string> fogTypes;
 
 int main() {
+    unsigned int seed = static_cast<unsigned int>(std::time(nullptr));
+
+    // Initialize random number generator with the seed
+    std::mt19937 rng(seed);
+
     // Initalize variables
     glm::mat4 view;
     glm::mat4 model;
@@ -397,7 +404,6 @@ glm::vec3 get_color(int r, int g, int b) {
 std::vector<float> generate_noise_map(int offsetX, int offsetY) {
     std::vector<float> noiseValues;
     std::vector<float> normalizedNoiseValues;
-    std::vector<int> p = get_permutation_vector();
     
     float amp  = 1;
     float freq = 1;

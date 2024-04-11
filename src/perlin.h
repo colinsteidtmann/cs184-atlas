@@ -10,7 +10,7 @@ double grad(int hash, double x, double y, double z) {
 }
     
 double perlin_noise(float x, float y, std::vector<int> &p) {
-    int z = 0.5;
+    float z = 0.5;
     
     int X = (int)floor(x) & 255,                  // FIND UNIT CUBE THAT
         Y = (int)floor(y) & 255,                  // CONTAINS POINT.
@@ -52,10 +52,16 @@ std::vector<int> get_permutation_vector () {
     138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180
     };
 
-    for (int j = 0; j < 2; j++)
-        for (int i=0; i < 256; i++) {
-            p.push_back(permutation[i]);
-        }
-    
-    return p;
+    // Copy the permutation vector to a new vector for shuffling
+    std::vector<int> permuted(permutation.begin(), permutation.end());
+
+    // Shuffle the permutation vector randomly
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(permuted.begin(), permuted.end(), g);
+
+    // Push the permuted vector twice to make it 512 elements long
+    permuted.insert(permuted.end(), permuted.begin(), permuted.end());
+
+    return permuted;
 }
