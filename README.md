@@ -11,9 +11,13 @@ Atlas is an OpenGL procedural terrain generation application that implements per
 - Linear, exponential, and exponential squared fog shading
 
 ## Controls
-- `command` + `Q` to exit application
+- `command/shift` + `Q` to exit application
 - `esc` to capture mouse from application
 - `shift` + `esc` to release into application
+- `M` to enable wireframe
+- `shift` + `M` to disable wireframe
+- `W`, `A`, `S`, `D` to move camera forward, left, back, and right
+- `space`, `caps lock` to move camera up, down
 - `F` + `0` to enable linear fog shading
 - `F` + `1` to enable exponential fog shading
 - `F` + `2` to enable exponential squared fog shading

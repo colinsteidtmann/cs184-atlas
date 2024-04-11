@@ -96,6 +96,9 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float currentFrame;
 
+vector<int> fogKeys;
+vector<string> fogTypes;
+
 int main() {
     // Initalize variables
     glm::mat4 view;
@@ -136,6 +139,15 @@ int main() {
     
     setup_instancing(treeVAO, tree_chunks, "tree", plants, "../resources/obj/CommonTree_1.obj");
     setup_instancing(flowerVAO, flower_chunks, "flower", plants, "../resources/obj/Flowers.obj");
+
+    fogKeys.push_back(GLFW_KEY_0);
+    fogKeys.push_back(GLFW_KEY_1);
+    fogKeys.push_back(GLFW_KEY_2);
+
+    fogTypes.push_back("isFogLinear");
+    fogTypes.push_back("isFogExponential");
+    fogTypes.push_back("isFogExponentialSquared");
+
     
     while (!glfwWindowShouldClose(window)) {
         fogShader.use();
@@ -238,11 +250,11 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
                 shader.setMat4("u_model", model);
 
                 glEnable(GL_CULL_FACE);
-                glBindVertexArray(flower_chunks[x + y*xMapChunks]);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 1300, 16);
-
                 glBindVertexArray(tree_chunks[x + y*xMapChunks]);
                 glDrawArraysInstanced(GL_TRIANGLES, 0, 10192, 8);
+
+                glBindVertexArray(flower_chunks[x + y*xMapChunks]);
+                glDrawArraysInstanced(GL_TRIANGLES, 0, 1300, 16);
                 glDisable(GL_CULL_FACE);
             }
         }
@@ -602,7 +614,7 @@ int init() {
 }
 
 void processInput(GLFWwindow *window, Shader &shader) {
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+    if ((glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) && glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -620,6 +632,8 @@ void processInput(GLFWwindow *window, Shader &shader) {
     // Enable wireframe mode
     if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     // Enable flat mode
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
@@ -631,59 +645,6 @@ void processInput(GLFWwindow *window, Shader &shader) {
         shader.use();
         shader.setBool("isFlat", true);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
-
-    vector<int> keys;
-    keys.push_back(GLFW_KEY_0);
-    keys.push_back(GLFW_KEY_1);
-    keys.push_back(GLFW_KEY_2);
-
-    vector<string> fogTypes;
-    fogTypes.push_back("isFogLinear");
-    fogTypes.push_back("isFogExponential");
-    fogTypes.push_back("isFogExponentialSquared");
-
-    for (int i = 0; i < keys.size(); i++) {
-        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, keys[i]) == GLFW_PRESS) {
-            shader.use();
-            for (int j = 0; j < fogTypes.size(); j++) {
-                if (i == j) {
-                    shader.setBool(fogTypes[j], true);
-                } else {
-                    shader.setBool(fogTypes[j], false);
-                }
-            }
-        }
-    }
-
-    // Disable fod shading with shift + F keys
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-        shader.use();
-        for (int i = 0; i < fogTypes.size(); i++) {
-            shader.setBool(fogTypes[i], false);
-        }
-    }
-
-
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
-        shader.use();
-        shader.setBool("isFogLinear", true);
-        shader.setBool("isFogExponential", false);
-        shader.setBool("isFogExponentialSquared", false);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-        shader.use();
-        shader.setBool("isFogLinear", false);
-        shader.setBool("isFogExponential", true);
-        shader.setBool("isFogExponentialSquared", false);
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-        shader.use();
-        shader.setBool("isFogLinear", false);
-        shader.setBool("isFogExponential", false);
-        shader.setBool("isFogExponentialSquared", true);
     }
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -698,6 +659,26 @@ void processInput(GLFWwindow *window, Shader &shader) {
         camera.ProcessKeyboard(UP, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
+
+    for (int i = 0; i < fogKeys.size(); i++) {
+        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, fogKeys[i]) == GLFW_PRESS) {
+            shader.use();
+            for (int j = 0; j < fogTypes.size(); j++) {
+                if (i == j) {
+                    shader.setBool(fogTypes[j], true);
+                } else {
+                    shader.setBool(fogTypes[j], false);
+                }
+            }
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
+        shader.use();
+        for (int i = 0; i < fogTypes.size(); i++) {
+            shader.setBool(fogTypes[i], false);
+        }
+    }
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos) {

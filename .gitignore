@@ -6,4 +6,5 @@ build/*
 .vscode/*
 cmake-build-release-visual-studio/*
 cmake-build-release/*
+cmake-build-debug/*
 .idea/*
