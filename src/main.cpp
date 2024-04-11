@@ -1,16 +1,12 @@
-#include <cmath>
 #include <string>
-#include <random>
 #include <iostream>
 #include <math.h>
 #include <cstdlib>
-#include <ctime>
 
 #include "glad.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -102,11 +98,6 @@ vector<int> fogKeys;
 vector<string> fogTypes;
 
 int main() {
-    unsigned int seed = static_cast<unsigned int>(std::time(nullptr));
-
-    // Initialize random number generator with the seed
-    std::mt19937 rng(seed);
-
     // Initalize variables
     glm::mat4 view;
     glm::mat4 model;
@@ -479,7 +470,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
             // NOTE: The max height of a vertex is "meshHeight"
             if (vertices[i] <= biomeColors[j].height * meshHeight) {
                 color = biomeColors[j].color;
-                if (j == 3) {
+                if (j == 3 || j == 4) {
                     if (rand() % 1000 < 5) {
                         if (rand() % 100 < 70) {
                             plantType = "flower";
