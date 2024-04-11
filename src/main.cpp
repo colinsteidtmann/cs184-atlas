@@ -16,6 +16,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "perlin.h"
+using namespace std;
 
 const GLint WIDTH = 1920, HEIGHT = 1080;
 
@@ -106,17 +107,19 @@ int main() {
     if (init() != 0)
         return -1;
     
-    Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
+    // Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
+    Shader fogShader("../resources/shaders/fogShader.vert", "../resources/shaders/fogShader.frag");
     
     // Default to coloring to flat mode
-    objectShader.use();
-    objectShader.setBool("isFlat", true);
+    fogShader.use();
+    fogShader.setBool("isFlat", true);
     
     // Lighting intensities and direction
-    objectShader.setVec3("light.ambient", 0.2, 0.2, 0.2);
-    objectShader.setVec3("light.diffuse", 0.3, 0.3, 0.3);
-    objectShader.setVec3("light.specular", 1.0, 1.0, 1.0);
-    objectShader.setVec3("light.direction", -0.2f, -1.0f, -0.3f);
+    fogShader.setVec3("light.ambient", 0.2, 0.2, 0.2);
+    fogShader.setVec3("light.diffuse", 0.3, 0.3, 0.3);
+    fogShader.setVec3("light.specular", 1.0, 1.0, 1.0);
+    fogShader.setVec3("light.direction", -1.0f, 1.0f, 1.0f);
+    fogShader.setFloat("distance", std::max(chunkWidth, chunkHeight) * chunk_render_distance);
     
     std::vector<GLuint> map_chunks(xMapChunks * yMapChunks);
     
@@ -135,14 +138,14 @@ int main() {
     setup_instancing(flowerVAO, flower_chunks, "flower", plants, "../resources/obj/Flowers.obj");
     
     while (!glfwWindowShouldClose(window)) {
-        objectShader.use();
+        fogShader.use();
         projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, (float)chunkWidth * (chunk_render_distance - 1.2f));
         view = camera.GetViewMatrix();
-        objectShader.setMat4("u_projection", projection);
-        objectShader.setMat4("u_view", view);
-        objectShader.setVec3("u_viewPos", camera.Position);
+        fogShader.setMat4("u_projection", projection);
+        fogShader.setMat4("u_view", view);
+        fogShader.setVec3("u_viewPos", camera.Position);
         
-        render(map_chunks, objectShader, view, model, projection, nIndices, tree_chunks, flower_chunks);
+        render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks);
     }
     
     for (int i = 0; i < map_chunks.size(); i++) {
@@ -599,11 +602,23 @@ int init() {
 }
 
 void processInput(GLFWwindow *window, Shader &shader) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+    }
     
     // Enable wireframe mode
-    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     // Enable flat mode
@@ -617,6 +632,51 @@ void processInput(GLFWwindow *window, Shader &shader) {
         shader.setBool("isFlat", true);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+
+    vector<int> keys;
+    keys.push_back(GLFW_KEY_0);
+    keys.push_back(GLFW_KEY_1);
+    keys.push_back(GLFW_KEY_2);
+
+    vector<string> fogTypes;
+    fogTypes.push_back("isFogLinear");
+    fogTypes.push_back("isFogExponential");
+    fogTypes.push_back("isFogExponentialSquared");
+
+    for (int i = 0; i < keys.size(); i++) {
+        if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, keys[i]) == GLFW_PRESS) {
+            shader.use();
+            for (int j = 0; j < fogTypes.size(); j++) {
+                if (i == j) {
+                    shader.setBool(fogTypes[j], true);
+                } else {
+                    shader.setBool(fogTypes[j], false);
+                }
+            }
+        }
+    }
+
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
+        shader.use();
+        shader.setBool("isFogLinear", true);
+        shader.setBool("isFogExponential", false);
+        shader.setBool("isFogExponentialSquared", false);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        shader.use();
+        shader.setBool("isFogLinear", false);
+        shader.setBool("isFogExponential", true);
+        shader.setBool("isFogExponentialSquared", false);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        shader.use();
+        shader.setBool("isFogLinear", false);
+        shader.setBool("isFogExponential", false);
+        shader.setBool("isFogExponentialSquared", true);
+    }
     
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
@@ -628,7 +688,7 @@ void processInput(GLFWwindow *window, Shader &shader) {
         camera.ProcessKeyboard(RIGHT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
         camera.ProcessKeyboard(UP, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
 }
 
