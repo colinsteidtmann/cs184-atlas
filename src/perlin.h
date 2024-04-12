@@ -1,3 +1,5 @@
+#include <random>
+
 double fade(double t) { return t * t * t * (t * (t * 6 - 15) + 10); };
     
 double lerp(double t, double a, double b) { return a + t * (b - a); }
