@@ -108,12 +108,12 @@ int main() {
     if (init() != 0)
         return -1;
     
-    // Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
+    // Shader fogShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
     Shader fogShader("../resources/shaders/fogShader.vert", "../resources/shaders/fogShader.frag");
     
     // Default to coloring to flat mode
     fogShader.use();
-    fogShader.setBool("isFlat", true);
+    fogShader.setBool("isFlat", false);
     
     // Lighting intensities and direction
     fogShader.setVec3("light.ambient", 0.2, 0.2, 0.2);
@@ -466,6 +466,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
     // Determine which color to assign each vertex by its y-coord
     // Iterate through vertex y values
     for (int i = 1; i < vertices.size(); i += 3) {
+        int k = 0;
         for (int j = 0; j < biomeColors.size(); j++) {
             // NOTE: The max height of a vertex is "meshHeight"
             if (vertices[i] <= biomeColors[j].height * meshHeight) {
@@ -480,8 +481,25 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
                         plants.push_back(plant{plantType, vertices[i-1], vertices[i], vertices[i+1], xOffset, yOffset});
                     }
                 }
+                k = j;
                 break;
             }
+        }
+
+        if (k > 0) {
+            glm::vec3 prevColor = biomeColors[k - 1].color;
+            glm::vec3 currColor = biomeColors[k].color;
+
+            float prevHeight = biomeColors[k - 1].height * meshHeight;
+            float currHeight = biomeColors[k].height * meshHeight;
+
+            float t = (vertices[i] - prevHeight) / (currHeight - prevHeight);
+
+            float r = ((1 - t) * prevColor.r + t * currColor.r) * 255;
+            float g = ((1 - t) * prevColor.g + t * currColor.g) * 255;
+            float b = ((1 - t) * prevColor.b + t * currColor.b) * 255;
+
+            color = get_color(r, g, b);
         }
         colors.push_back(color.r);
         colors.push_back(color.g);
