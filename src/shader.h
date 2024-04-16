@@ -2,6 +2,7 @@
 #define SHADER_H
 
 #include "glad.h"
+#include "glm/gtc/type_ptr.hpp"
 
 #include <string>
 #include <fstream>
@@ -12,6 +13,9 @@ class Shader {
 public:
     // Program ID
     unsigned int ID;
+    unsigned int vertexShaderID;
+    unsigned int fragmentShaderID;
+
     // Read and build shader
     Shader(const char* vertexPath, const char* fragmentPath) {
         // Retrieve the vertex and fragment source code form filePath
@@ -43,37 +47,36 @@ public:
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
         
-        // Compile shaders
-        unsigned int vertex, fragment;
         
         // Vertex shader
-        vertex = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex, 1, &vShaderCode, NULL);
-        glCompileShader(vertex);
-        checkCompileErrors(vertex, "VERTEX");
+        vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShaderID, 1, &vShaderCode, NULL);
+        glCompileShader(vertexShaderID);
+        checkCompileErrors(vertexShaderID, "VERTEX");
         
         // Fragment shader
-        fragment = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment, 1, &fShaderCode, NULL);
-        glCompileShader(fragment);
-        checkCompileErrors(fragment, "FRAGMENT");
+        fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShaderID, 1, &fShaderCode, NULL);
+        glCompileShader(fragmentShaderID);
+        checkCompileErrors(fragmentShaderID, "FRAGMENT");
         
         // Shader program
         ID = glCreateProgram();
-        glAttachShader(ID, vertex);
-        glAttachShader(ID, fragment);
+        glAttachShader(ID, vertexShaderID);
+        glAttachShader(ID, fragmentShaderID);
         glLinkProgram(ID);
         checkCompileErrors(ID, "PROGRAM");
         
         // Delete the shaders as they're now linked into program
-        glDeleteShader(vertex);
-        glDeleteShader(fragment);
+        glDeleteShader(vertexShaderID);
+        glDeleteShader(fragmentShaderID);
     }
     
     // Use and activate the shader
     void use() {
         glUseProgram(ID);
     }
+
     // Utility uniform functions
     void setBool(const std::string &name, bool value) const {
         glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);

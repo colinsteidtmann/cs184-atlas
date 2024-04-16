@@ -27,7 +27,7 @@ endif()
 set(CMAKE_CXX_STANDARD 14)            # enable c++14 standard
 
 # add source files
-set(SOURCE_FILES lib/glad.c src/main.cpp)
+set(SOURCE_FILES lib/glad.c src/main.cpp src/loader.cpp src/waterRenderer.cpp)
 
 # add executable target with source files listed in SOURCE_FILES variable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

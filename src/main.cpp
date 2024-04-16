@@ -13,6 +13,12 @@
 #include "shader.h"
 #include "camera.h"
 #include "perlin.h"
+#include "main.h"
+#include <limits>
+
+#include "waterRenderer.hpp"
+
+
 using namespace std;
 
 const GLint WIDTH = 1920, HEIGHT = 1080;
@@ -46,6 +52,7 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
 std::vector<int> generate_indices();
 std::vector<float> generate_noise_map(int xOffset, int yOffset);
 std::vector<float> generate_vertices(const std::vector<float> &noise_map);
+std::vector<float> generate_water_vertices(std::vector<float> &vertices);
 std::vector<float> generate_normals(const std::vector<int> &indices, const std::vector<float> &vertices);
 std::vector<float> generate_biome(const std::vector<float> &vertices, std::vector<plant> &plants, int xOffset, int yOffset);
 void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset, std::vector<plant> &plants);
@@ -54,6 +61,9 @@ void load_model(GLuint &VAO, std::string filename);
 void setup_instancing(GLuint &VAO, std::vector<GLuint> &plant_chunk, std::string plant_type, std::vector<plant> &plants, std::string filename);
 
 GLFWwindow *window;
+
+// Global renderer
+WaterRenderer *waterRenderer;
 
 // Map params
 float WATER_HEIGHT = 0.1;
@@ -97,6 +107,42 @@ float currentFrame;
 vector<int> fogKeys;
 vector<string> fogTypes;
 
+
+// void generate_rectangle(GLuint &VAO) {
+//     // Define vertices for a rectangle
+//     float vertices[] = {
+//         // Positions
+//         -10, -10, 10, // Bottom Left
+//         10, -10, 10,  // Bottom Right
+//         10, 10, 10,   // Top Right
+//         -10, 10, 10   // Top Left
+//     };
+
+//     GLuint VBO, EBO;
+
+//     // Generate buffers and arrays
+//     glGenBuffers(1, &VBO);
+//     glGenBuffers(1, &EBO);
+//     glGenVertexArrays(1, &VAO);
+
+//     // Bind VAO
+//     glBindVertexArray(VAO);
+
+//     // Bind vertices to VBO
+//     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+//     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+//     // Configure vertex position attribute
+//     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+//     glEnableVertexAttribArray(0);
+
+//     // Unbind VBO and VAO
+//     glBindBuffer(GL_ARRAY_BUFFER, 0);
+//     glBindVertexArray(0);
+
+
+// }
+
 int main() {
     // Initalize variables
     glm::mat4 view;
@@ -110,7 +156,8 @@ int main() {
     
     // Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
     Shader fogShader("../resources/shaders/fogShader.vert", "../resources/shaders/fogShader.frag");
-    
+    WaterShader waterShader("../resources/shaders/waterShader.vert", "../resources/shaders/waterShader.frag");  // WaterShader has additional functionality on top of Shader class
+
     // Default to coloring to flat mode
     fogShader.use();
     fogShader.setBool("isFlat", true);
@@ -130,6 +177,15 @@ int main() {
     fogTypes.push_back("isFogExponentialSquared");
     
     std::vector<GLuint> map_chunks(xMapChunks * yMapChunks);
+
+    // Set up water resources
+    Loader loader = Loader();   
+    waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0));  
+    // std::vector<Water> waters;
+    // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2, chunkHeight/2));
+
+    // GLuint rectangleVAO;
+    // generate_rectangle(rectangleVAO);
     
     for (int y = 0; y < yMapChunks; y++)
         for (int x = 0; x < xMapChunks; x++) {
@@ -137,7 +193,8 @@ int main() {
         }
     
     int nIndices = chunkWidth * chunkHeight * 6;
-    
+
+    // Generate water tiles here
     GLuint treeVAO, flowerVAO;
     std::vector<GLuint> tree_chunks(xMapChunks * yMapChunks);
     std::vector<GLuint> flower_chunks(xMapChunks * yMapChunks);
@@ -147,13 +204,42 @@ int main() {
     
     while (!glfwWindowShouldClose(window)) {
         fogShader.use();
-        projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, (float)chunkWidth * (chunk_render_distance - 1.2f));
+        projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.2f, (float)chunkWidth * (chunk_render_distance - 1.2f));
         view = camera.GetViewMatrix();
         fogShader.setMat4("u_projection", projection);
         fogShader.setMat4("u_view", view);
         fogShader.setVec3("u_viewPos", camera.Position);
         
         render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks);
+
+        waterShader.use();
+        // model = glm::mat4(1.0f);
+        // waterShader.setMat4("u_model", model);
+        // waterShader.setMat4("u_projection", projection);
+        // waterShader.setMat4("u_view", view);
+        
+        // glBindVertexArray(rectangleVAO);
+        // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        
+        // Render water tiles
+        waterRenderer->loadProjectionMatrix(projection);  // Must update for every loop
+        waterRenderer->render(camera);
+
+        // Measure speed in ms per frame
+        double currentTime = glfwGetTime();
+        nbFrames++;
+        // If last prinf() was more than 1 sec ago printf and reset timer
+        if (currentTime - lastTime >= 1.0 ) {
+            printf("%f ms/frame\n", 1000.0/double(nbFrames));
+            nbFrames = 0;
+            lastTime += 1.0;
+        }
+    
+        // Use double buffer
+        // Only swap old frame with new when it is completed
+        glfwPollEvents();
+        glfwSwapBuffers(window);
+
     }
     
     for (int i = 0; i < map_chunks.size(); i++) {
@@ -234,41 +320,26 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
                 shader.setMat4("u_model", model);
-                
+
                 // Terrain chunk
                 glBindVertexArray(map_chunks[x + y*xMapChunks]);
                 glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
                 
                 // Plant chunks
-                model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
-                model = glm::scale(model, glm::vec3(MODEL_SCALE));
-                shader.setMat4("u_model", model);
+                // model = glm::mat4(1.0f);
+                // model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
+                // model = glm::scale(model, glm::vec3(MODEL_SCALE));
+                // shader.setMat4("u_model", model);
 
-                glEnable(GL_CULL_FACE);
-                glBindVertexArray(tree_chunks[x + y*xMapChunks]);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 10192, 8);
+                // glEnable(GL_CULL_FACE);
+                // glBindVertexArray(tree_chunks[x + y*xMapChunks]);
+                // glDrawArraysInstanced(GL_TRIANGLES, 0, 10192, 8);
 
-                glBindVertexArray(flower_chunks[x + y*xMapChunks]);
-                glDrawArraysInstanced(GL_TRIANGLES, 0, 1300, 16);
-                glDisable(GL_CULL_FACE);
+                // glBindVertexArray(flower_chunks[x + y*xMapChunks]);
+                // glDrawArraysInstanced(GL_TRIANGLES, 0, 1300, 16);
+                // glDisable(GL_CULL_FACE);
             }
         }
-    
-    // Measure speed in ms per frame
-    double currentTime = glfwGetTime();
-    nbFrames++;
-    // If last prinf() was more than 1 sec ago printf and reset timer
-    if (currentTime - lastTime >= 1.0 ){
-        printf("%f ms/frame\n", 1000.0/double(nbFrames));
-        nbFrames = 0;
-        lastTime += 1.0;
-    }
-    
-    // Use double buffer
-    // Only swap old frame with new when it is completed
-    glfwPollEvents();
-    glfwSwapBuffers(window);
 }
 
 void load_model(GLuint &VAO, std::string filename) {
@@ -343,14 +414,22 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset, std::vector<plant
     std::vector<float> vertices;
     std::vector<float> normals;
     std::vector<float> colors;
+    std::vector<float> water_vertices;
     
     // Generate map
     indices = generate_indices();
     noise_map = generate_noise_map(xOffset, yOffset);
     vertices = generate_vertices(noise_map);
+    water_vertices = generate_water_vertices(vertices);
     normals = generate_normals(indices, vertices);
     colors = generate_biome(vertices, plants, xOffset, yOffset);
     
+    float water_plane_height = 0.9 * WATER_HEIGHT * meshHeight;
+    int idx = xOffset + yOffset * xMapChunks;
+    waterRenderer->setUpVAO(water_vertices, idx, -chunkWidth / 2.0 + (chunkWidth - 1) * xOffset,
+                             water_plane_height , -chunkWidth / 2.0 + (chunkWidth - 1) * yOffset);
+
+
     GLuint VBO[3], EBO;
     
     // Create buffers and arrays
@@ -454,18 +533,18 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
     // NOTE: Terrain color height is a value between 0 and 1
     biomeColors.push_back(terrainColor(WATER_HEIGHT * 0.5, get_color(60,  95, 190)));   // Deep water
     biomeColors.push_back(terrainColor(WATER_HEIGHT,        get_color(60, 100, 190)));  // Shallow water
-    biomeColors.push_back(terrainColor(0.15, get_color(210, 215, 130)));                // Sand
-    biomeColors.push_back(terrainColor(0.30, get_color( 95, 165,  30)));                // Grass 1
-    biomeColors.push_back(terrainColor(0.40, get_color( 65, 115,  20)));                // Grass 2
-    biomeColors.push_back(terrainColor(0.50, get_color( 90,  65,  60)));                // Rock 1
-    biomeColors.push_back(terrainColor(0.80, get_color( 75,  60,  55)));                // Rock 2
+    biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130)));                // Sand
+    biomeColors.push_back(terrainColor(0.40, get_color( 95, 165,  30)));                // Grass 1
+    biomeColors.push_back(terrainColor(0.50, get_color( 65, 115,  20)));                // Grass 2
+    biomeColors.push_back(terrainColor(0.60, get_color( 90,  65,  60)));                // Rock 1
+    biomeColors.push_back(terrainColor(0.90, get_color( 75,  60,  55)));                // Rock 2
     biomeColors.push_back(terrainColor(1.00, get_color(255, 255, 255)));                // Snow
     
     std::string plantType;
     
     // Determine which color to assign each vertex by its y-coord
     // Iterate through vertex y values
-    for (int i = 1; i < vertices.size(); i += 3) {
+    for (int i = 1; i < vertices.size(); i += 3) {  // x, y, z, so look at every y value
         for (int j = 0; j < biomeColors.size(); j++) {
             // NOTE: The max height of a vertex is "meshHeight"
             if (vertices[i] <= biomeColors[j].height * meshHeight) {
@@ -530,7 +609,8 @@ std::vector<float> generate_vertices(const std::vector<float> &noise_map) {
             float easedNoise = std::pow(noise_map[x + y*chunkWidth] * 1.1, 3);
             // Scale noise to match meshHeight
             // Pervent vertex height from being below WATER_HEIGHT
-            v.push_back(std::fmax(easedNoise * meshHeight, WATER_HEIGHT * 0.5 * meshHeight));
+            v.push_back(easedNoise * meshHeight);
+            // v.push_back(std::fmax(easedNoise * meshHeight, WATER_HEIGHT * 0.5 * meshHeight));
             v.push_back(y);
         }
     
@@ -562,6 +642,34 @@ std::vector<int> generate_indices() {
     return indices;
 }
 
+std::vector<float> generate_water_vertices(std::vector<float> &vertices) {
+    float max_x = 0;
+    float min_x = 127;
+    float max_z = 0;
+    float min_z = 127;
+
+    // Bug: currently just getting the bounding water box for a chunk, rather than per island within a chunk.
+    for (int i = 1; i < vertices.size(); i += 3) {
+        if (vertices[i] <= WATER_HEIGHT * meshHeight) {
+            // max_x = std::max(vertices[i-1], max_x);
+            // min_x = std::min(vertices[i-1], min_x);
+            // max_z = std::max(vertices[i+1], max_z);
+            // min_z = std::min(vertices[i+1], min_z); 
+            vertices[i] = vertices[i] * 0.7; // To prevent z-fighting with the water plane
+        } else {
+            vertices[i] += 0.05; // To prevent z-fighting with the water plane
+        }
+    }
+
+    // std::cout << min_x << " " << max_x << " " << min_z << " " << max_z << " ";
+    
+    std::vector<float> water_vertices = {min_x, min_z, min_x, max_z,
+                                            max_x, min_z, max_x, min_z,
+                                            min_x, max_z, max_x, max_z};
+    
+    return water_vertices;
+}
+
 // Initialize GLFW and GLAD
 int init() {
     glfwInit();
@@ -577,6 +685,7 @@ int init() {
     
     window = glfwCreateWindow(WIDTH, HEIGHT, "Terrain Generator", nullptr, nullptr);
     
+    glfwWindowHint(GLFW_DEPTH_BITS, 64);
     // Account for macOS retina resolution
     int screenWidth, screenHeight;
     glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
