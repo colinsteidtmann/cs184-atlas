@@ -154,13 +154,13 @@ int main() {
     if (init() != 0)
         return -1;
     
-    // Shader objectShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
+    // Shader fogShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
     Shader fogShader("../resources/shaders/fogShader.vert", "../resources/shaders/fogShader.frag");
     WaterShader waterShader("../resources/shaders/waterShader.vert", "../resources/shaders/waterShader.frag");  // WaterShader has additional functionality on top of Shader class
 
     // Default to coloring to flat mode
     fogShader.use();
-    fogShader.setBool("isFlat", true);
+    fogShader.setBool("isFlat", false);
     
     // Lighting intensities and direction
     fogShader.setVec3("light.ambient", 0.2, 0.2, 0.2);
@@ -535,16 +535,18 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
     biomeColors.push_back(terrainColor(WATER_HEIGHT,        get_color(60, 100, 190)));  // Shallow water
     biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130)));                // Sand
     biomeColors.push_back(terrainColor(0.40, get_color( 95, 165,  30)));                // Grass 1
-    biomeColors.push_back(terrainColor(0.50, get_color( 65, 115,  20)));                // Grass 2
-    biomeColors.push_back(terrainColor(0.60, get_color( 90,  65,  60)));                // Rock 1
-    biomeColors.push_back(terrainColor(0.90, get_color( 75,  60,  55)));                // Rock 2
-    biomeColors.push_back(terrainColor(1.00, get_color(255, 255, 255)));                // Snow
+    biomeColors.push_back(terrainColor(0.50, get_color( 65, 115,  20)));                // Grass 2              // Grass 2
+    biomeColors.push_back(terrainColor(0.65, get_color( 90,  65,  60)));                // Rock 1
+    biomeColors.push_back(terrainColor(0.80, get_color( 75,  60,  55)));                // Rock 2
+    biomeColors.push_back(terrainColor(1.2, get_color(220, 220,  220)));                // Snow 1
+    biomeColors.push_back(terrainColor(1.45, get_color(255, 255, 255)));                // Snow 2
     
     std::string plantType;
     
     // Determine which color to assign each vertex by its y-coord
     // Iterate through vertex y values
     for (int i = 1; i < vertices.size(); i += 3) {  // x, y, z, so look at every y value
+        int k = 0;
         for (int j = 0; j < biomeColors.size(); j++) {
             // NOTE: The max height of a vertex is "meshHeight"
             if (vertices[i] <= biomeColors[j].height * meshHeight) {
@@ -559,8 +561,25 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
                         plants.push_back(plant{plantType, vertices[i-1], vertices[i], vertices[i+1], xOffset, yOffset});
                     }
                 }
+                k = j;
                 break;
             }
+        }
+
+        if (k > 0) {
+            glm::vec3 prevColor = biomeColors[k - 1].color;
+            glm::vec3 currColor = biomeColors[k].color;
+
+            float prevHeight = biomeColors[k - 1].height * meshHeight;
+            float currHeight = biomeColors[k].height * meshHeight;
+
+            float t = (vertices[i] - prevHeight) / (currHeight - prevHeight);
+
+            float r = ((1 - t) * prevColor.r + t * currColor.r) * 255;
+            float g = ((1 - t) * prevColor.g + t * currColor.g) * 255;
+            float b = ((1 - t) * prevColor.b + t * currColor.b) * 255;
+
+            color = get_color(r, g, b);
         }
         colors.push_back(color.r);
         colors.push_back(color.g);
@@ -742,12 +761,12 @@ void processInput(GLFWwindow *window, Shader &shader) {
     // Enable flat mode
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
         shader.use();
-        shader.setBool("isFlat", false);
+        shader.setBool("isFlat", true);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-    if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
+      if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
         shader.use();
-        shader.setBool("isFlat", true);
+        shader.setBool("isFlat", false);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
     

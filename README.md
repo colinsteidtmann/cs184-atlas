@@ -21,3 +21,5 @@ Atlas is an OpenGL procedural randomly generated terrain generation application 
 - `F` + `1` to enable exponential fog shading
 - `F` + `2` to enable exponential squared fog shading
 - `shift` + `F`to disable all fog shading
+- `G` to enable flat shading
+- `shift` + `G` to disable flat shading

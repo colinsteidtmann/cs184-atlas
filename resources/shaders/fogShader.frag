@@ -1,6 +1,6 @@
 #version 330 core
 
-flat in vec3 flatColor;
+in vec3 Color;
 in vec3 fragPos;
 
 uniform vec3 u_viewPos;
@@ -43,10 +43,10 @@ void main() {
       fogFactor = calculateFogExponential(cameraToPixel);
     }
 
-    vec3 finalColor = mix(flatColor, fogColor, fogFactor);
+    vec3 finalColor = mix(Color, fogColor, fogFactor);
   
     FragColor = vec4(finalColor, 1.0);
   } else {
-    FragColor = vec4(flatColor, 1.0);
+    FragColor = vec4(Color, 1.0);
   }
 }
