@@ -2,6 +2,7 @@
 
 in vec3 Color;
 in vec3 fragPos;
+in float height;
 
 uniform vec3 u_viewPos;
 

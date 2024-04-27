@@ -6,6 +6,7 @@ layout (location = 3) in vec3 aOffset;
 
 out vec3 Color;
 out vec3 fragPos;
+out float height;
 
 struct Light {
     vec3 direction;
@@ -48,7 +49,24 @@ void main() {
 //    vec3 Normal = transpose(inverse(mat3(u_model))) * aNormal;
 
     vec3 lighting = calculateLighting(Normal, fragPos);
-    Color = aColor * lighting;
-    
+    float meshHeight = 32;
+//    if (aColor.x > 0.5 || aColor.y > 0.8 || aColor.z > 0.8) {
+//        Color = vec3(1.0, 1.0, 1.0) * lighting;
+//    } else {
+//        Color = aColor * lighting;
+//    }
+    // Color = aColor * lighting;
+
+    float snowThreshold = 0.8; // Adjust this value as needed
+
+    // If the height is above the snow threshold, render snow; otherwise, render terrain
+    if (aPos.y > snowThreshold * meshHeight) {
+        // Apply snowy texture
+        Color = vec3(1.0, 1.0, 1.0) * lighting; // White color for snow
+    } else {
+        Color = aColor * lighting;
+    }
+
+    height = fragPos.y;
     gl_Position = u_projection * u_view * u_model * vec4(aPos + aOffset, 1.0);
 }

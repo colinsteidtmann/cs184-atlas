@@ -110,7 +110,7 @@ int main() {
     
     // Shader fogShader("../resources/shaders/objectShader.vert", "../resources/shaders/objectShader.frag");
     Shader fogShader("../resources/shaders/fogShader.vert", "../resources/shaders/fogShader.frag");
-    
+
     // Default to coloring to flat mode
     fogShader.use();
     fogShader.setBool("isFlat", false);
@@ -244,7 +244,6 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
                 model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
                 model = glm::scale(model, glm::vec3(MODEL_SCALE));
                 shader.setMat4("u_model", model);
-
                 glEnable(GL_CULL_FACE);
                 glBindVertexArray(tree_chunks[x + y*xMapChunks]);
                 glDrawArraysInstanced(GL_TRIANGLES, 0, 10192, 8);
