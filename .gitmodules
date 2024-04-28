@@ -18,3 +18,10 @@
     path = lib/stb
     url = https://github.com/nothings/stb.git
     branch = main
+[submodule "lib/freeimage"]
+    path = lib/freeimage
+    url = https://github.com/danoli3/FreeImage
+    branch = main
+[submodule "lib/lib/freeimage"]
+	path = lib/lib/freeimage
+	url = https://github.com/danoli3/FreeImage

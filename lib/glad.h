@@ -2859,6 +2859,20 @@ GLAPI PFNGLTRANSLATEDPROC glad_glTranslated;
 typedef void (APIENTRYP PFNGLTRANSLATEFPROC)(GLfloat x, GLfloat y, GLfloat z);
 GLAPI PFNGLTRANSLATEFPROC glad_glTranslatef;
 #define glTranslatef glad_glTranslatef
+
+
+typedef void (APIENTRYP PFNGLTEXSUBIMAGE2DPROC)(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
+GLAPI PFNGLTEXSUBIMAGE2DPROC glad_glTexSubImage2D;
+GLAPI PFNGLTEXSUBIMAGE2DPROC glad_glTexSubImage2D;
+#define glTexSubImage2D glad_glTexSubImage2D
+typedef void (APIENTRYP PFNGLBINDTEXTUREPROC)(GLenum target, GLuint texture);
+GLAPI PFNGLBINDTEXTUREPROC glad_glBindTexture;
+#define glBindTexture glad_glBindTexture
+typedef void (APIENTRYP PFNGLDELETETEXTURESPROC)(GLsizei n, const GLuint *textures);
+GLAPI PFNGLDELETETEXTURESPROC glad_glDeleteTextures;
+#define glDeleteTextures glad_glDeleteTextures
+
+
 #endif
 #ifndef GL_VERSION_1_1
 #define GL_VERSION_1_1 1

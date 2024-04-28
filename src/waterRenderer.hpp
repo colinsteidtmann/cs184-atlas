@@ -4,7 +4,7 @@
 #include "shader.h"
 
 #include "camera.h"
-#include "loader.cpp"
+#include "loader.h"
 #include "waterShader.hpp"
 #include "main.h"
 

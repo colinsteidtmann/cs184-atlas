@@ -14,6 +14,8 @@ option(ASSIMP_BUILD_SAMPLES OFF)
 option(ASSIMP_BUILD_TESTS OFF)
 add_subdirectory(lib/assimp)
 
+add_subdirectory(lib/freeimage)
+
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
@@ -27,7 +29,7 @@ endif()
 set(CMAKE_CXX_STANDARD 14)            # enable c++14 standard
 
 # add source files
-set(SOURCE_FILES lib/glad.c src/main.cpp src/loader.cpp src/waterRenderer.cpp)
+set(SOURCE_FILES lib/glad.c src/main.cpp src/loader.cpp src/waterRenderer.cpp src/grassTexture.cpp src/grassRenderer.cpp )
 
 # add executable target with source files listed in SOURCE_FILES variable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
@@ -36,7 +38,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 find_package(OpenGL REQUIRED)
 
 # link libraries
-target_link_libraries(${PROJECT_NAME} PUBLIC assimp glfw
+target_link_libraries(${PROJECT_NAME} PUBLIC assimp glfw FreeImage
         ${GLFW_LIBRARIES} ${GLAD_LIBRARIES} ${OPENGL_LIBRARIES})
 
 # include directories
@@ -44,7 +46,9 @@ include_directories(lib/assimp/include/
                     lib/glad/include/
                     lib/glfw/include/
                     lib/glm/
-                    lib/stb/)
+                    lib/stb/
+                    lib/freeimage/Source
+                    lib/freeimage/Dist)
 file(GLOB VENDORS_SOURCES lib/glad/src/glad.c)
 source_group("Vendors" FILES ${VENDORS_SOURCES})
 
