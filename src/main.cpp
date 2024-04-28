@@ -219,8 +219,13 @@ int main() {
         
         // Render reflection
         buffers->bindReflectionFrameBuffer();
+        float distance = 2 * (camera.Position.y - water_plane_height);
+        camera.Position.y -= distance;  // Move the camera below the water for this reflection rendering
+        camera.Pitch = -camera.Pitch;   // Also invert the pitch
         render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
         buffers->unbindCurrentFrameBuffer();
+        camera.Position.y += distance;
+        camera.Pitch = -camera.Pitch;
 
         // Render refraction
         buffers->bindRefractionFrameBuffer();
