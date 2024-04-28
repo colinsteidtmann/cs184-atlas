@@ -52,9 +52,9 @@ void WaterRenderer::render(Camera camera) {
                 glBindVertexArray(quad.VAO);
                 glEnableVertexAttribArray(0);
 
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
-                shader.setMat4("u_model", model);
+                // glm::mat4 model = glm::mat4(1.0f);
+                // model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
+                // shader.setMat4("u_model", model);
 
                 // Water chunk
                 glBindVertexArray(quad.VAO);

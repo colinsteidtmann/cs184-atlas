@@ -17,11 +17,12 @@
 #include <limits>
 
 #include "waterRenderer.hpp"
+#include "waterFrameBuffer.cpp"
 
 
 using namespace std;
 
-const GLint WIDTH = 1920, HEIGHT = 1080;
+GLint WIDTH = 1920, HEIGHT = 1080;
 
 // Structs
 struct plant {
@@ -181,6 +182,8 @@ int main() {
     // Set up water resources
     Loader loader = Loader();   
     waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0));  
+    WaterFrameBuffers* fbos = new WaterFrameBuffers();
+
     // std::vector<Water> waters;
     // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2, chunkHeight/2));
 
@@ -212,6 +215,8 @@ int main() {
         
         render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks);
 
+        // Water's FBO
+        fbos->bindReflectionFrameBuffer(); // Only rendering the water to this fbo
         waterShader.use();
         // model = glm::mat4(1.0f);
         // waterShader.setMat4("u_model", model);
@@ -224,6 +229,7 @@ int main() {
         // Render water tiles
         waterRenderer->loadProjectionMatrix(projection);  // Must update for every loop
         waterRenderer->render(camera);
+        fbos->unbindCurrentFrameBuffer(); // Set the active frame buffer back to default
 
         // Measure speed in ms per frame
         double currentTime = glfwGetTime();
