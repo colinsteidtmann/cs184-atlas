@@ -21,6 +21,8 @@ uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 
+uniform vec4 plane;
+
 vec3 calculateLighting(vec3 Normal, vec3 FragPos) {
     // Ambient lighting
     vec3 ambient = light.ambient;
@@ -46,6 +48,9 @@ void main() {
     fragPos = vec3(u_model * vec4(aPos + aOffset, 1.0));
     vec3 Normal = aNormal;
 //    vec3 Normal = transpose(inverse(mat3(u_model))) * aNormal;
+
+    // Clipping plane
+    gl_ClipDistance[0] = dot(vec4(fragPos, 1), plane); // Consider using umodel * aPos 
 
     vec3 lighting = calculateLighting(Normal, fragPos);
     Color = aColor * lighting;

@@ -48,7 +48,7 @@ int init();
 void processInput(GLFWwindow *window, Shader &shader);
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, glm::mat4 &model, glm::mat4 &projection, int &nIndices, std::vector<GLuint> &tree_chunks, std::vector<GLuint> &flower_chunks);
+void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, glm::mat4 &model, glm::mat4 &projection, int &nIndices, std::vector<GLuint> &tree_chunks, std::vector<GLuint> &flower_chunks, glm::vec4 clip_plane);
 
 std::vector<int> generate_indices();
 std::vector<float> generate_noise_map(int xOffset, int yOffset);
@@ -85,6 +85,8 @@ float noiseScale = 64;  // Horizontal scaling
 float persistence = 0.5;
 float lacunarity = 2;
 vector<int> p = get_permutation_vector();
+
+float water_plane_height = 0.9 * WATER_HEIGHT * meshHeight;
 
 // Model params
 float MODEL_SCALE = 3;
@@ -182,7 +184,7 @@ int main() {
     // Set up water resources
     Loader loader = Loader();   
     waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0));  
-    WaterFrameBuffers* fbos = new WaterFrameBuffers();
+    WaterFrameBuffers* buffers = new WaterFrameBuffers();
 
     // std::vector<Water> waters;
     // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2, chunkHeight/2));
@@ -206,6 +208,8 @@ int main() {
     setup_instancing(flowerVAO, flower_chunks, "flower", plants, "../resources/obj/Flowers.obj");
     
     while (!glfwWindowShouldClose(window)) {
+        glEnable(GL_CLIP_DISTANCE0);  
+
         fogShader.use();
         projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.2f, (float)chunkWidth * (chunk_render_distance - 1.2f));
         view = camera.GetViewMatrix();
@@ -213,23 +217,24 @@ int main() {
         fogShader.setMat4("u_view", view);
         fogShader.setVec3("u_viewPos", camera.Position);
         
-        render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks);
+        // Render reflection
+        buffers->bindReflectionFrameBuffer();
+        render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
+        buffers->unbindCurrentFrameBuffer();
 
-        // Water's FBO
-        fbos->bindReflectionFrameBuffer(); // Only rendering the water to this fbo
+        // Render refraction
+        buffers->bindRefractionFrameBuffer();
+        render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, -1, 0, water_plane_height));
+        buffers->unbindCurrentFrameBuffer();
+
+        // Render onto the actual display's FBO
+        glDisable(GL_CLIP_DISTANCE0); 
+        render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, -1, 0, water_plane_height));  // The last argument for this call is just a dummy value
+
         waterShader.use();
-        // model = glm::mat4(1.0f);
-        // waterShader.setMat4("u_model", model);
-        // waterShader.setMat4("u_projection", projection);
-        // waterShader.setMat4("u_view", view);
-        
-        // glBindVertexArray(rectangleVAO);
-        // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-        
         // Render water tiles
         waterRenderer->loadProjectionMatrix(projection);  // Must update for every loop
         waterRenderer->render(camera);
-        fbos->unbindCurrentFrameBuffer(); // Set the active frame buffer back to default
 
         // Measure speed in ms per frame
         double currentTime = glfwGetTime();
@@ -303,7 +308,7 @@ void setup_instancing(GLuint &VAO, std::vector<GLuint> &plant_chunk, std::string
     }
 }
 
-void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, glm::mat4 &model, glm::mat4 &projection, int &nIndices, std::vector<GLuint> &tree_chunks, std::vector<GLuint> &flower_chunks) {
+void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, glm::mat4 &model, glm::mat4 &projection, int &nIndices, std::vector<GLuint> &tree_chunks, std::vector<GLuint> &flower_chunks, glm::vec4 clip_plane) {
     // Per-frame time logic
     currentFrame = glfwGetTime();
     deltaTime = currentFrame - lastFrame;
@@ -318,6 +323,7 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
     gridPosX = (int)(camera.Position.x - originX) / chunkWidth + xMapChunks / 2;
     gridPosY = (int)(camera.Position.z - originY) / chunkHeight + yMapChunks / 2;
     
+    shader.setVec4("plane", clip_plane);
     // Render map chunks
     for (int y = 0; y < yMapChunks; y++)
         for (int x = 0; x < xMapChunks; x++) {
@@ -430,7 +436,6 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset, std::vector<plant
     normals = generate_normals(indices, vertices);
     colors = generate_biome(vertices, plants, xOffset, yOffset);
     
-    float water_plane_height = 0.9 * WATER_HEIGHT * meshHeight;
     int idx = xOffset + yOffset * xMapChunks;
     waterRenderer->setUpVAO(water_vertices, idx, -chunkWidth / 2.0 + (chunkWidth - 1) * xOffset,
                              water_plane_height , -chunkWidth / 2.0 + (chunkWidth - 1) * yOffset);
