@@ -893,7 +893,7 @@ void processInput(GLFWwindow *window, Shader &shader)
     if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
-        GRASS_ENABLED=!GRASS_ENABLED;
+        GRASS_ENABLED = !GRASS_ENABLED;
 
     for (int i = 0; i < fogKeys.size(); i++)
     {

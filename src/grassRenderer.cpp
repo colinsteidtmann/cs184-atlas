@@ -125,7 +125,11 @@ unsigned int GrassRenderer::loadTextureFromFile(const char *path)
 #elif defined(_WIN32) || defined(_WIN64)
 #include <direct.h>
 #define GetCurrentDir _getcwd
+#elif defined(__APPLE__)
+#include <unistd.h>
+#define GetCurrentDir getcwd
 #endif
+
 
 std::string GrassRenderer::getCurrentWorkingDirectory()
 {
