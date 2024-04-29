@@ -18,6 +18,7 @@
 
 #include "grassRenderer.hpp"
 #include "waterRenderer.hpp"
+#include "snowyGrassRenderer.hpp"
 
 using namespace std;
 
@@ -58,6 +59,7 @@ std::vector<float> generate_noise_map(int xOffset, int yOffset);
 std::vector<float> generate_vertices(const std::vector<float> &noise_map);
 std::vector<float> generate_water_vertices(std::vector<float> &vertices);
 std::vector<float> generate_grass_vertices(std::vector<float> &vertices);
+std::vector<float> generate_snowy_grass_vertices(std::vector<float> &vertices);
 std::vector<float> generate_normals(const std::vector<int> &indices,
                                     const std::vector<float> &vertices);
 std::vector<float> generate_biome(const std::vector<float> &vertices,
@@ -76,6 +78,7 @@ GLFWwindow *window;
 // Global renderer
 WaterRenderer *waterRenderer;
 GrassRenderer *grassRenderer;
+SnowyGrassRenderer *snowyGrassRenderer;
 
 // Map params
 float WATER_HEIGHT = 0.1;
@@ -179,6 +182,10 @@ int main() {
                           "../resources/shaders/grassShader.frag",
                           "../resources/shaders/grassShader.geom");
 
+  SnowyGrassShader snowyGrassShader("../resources/shaders/snowyGrassShader.vert",
+                          "../resources/shaders/snowyGrassShader.frag",
+                          "../resources/shaders/snowyGrassShader.geom");
+
   // Default to coloring to flat mode
   fogShader.use();
   fogShader.setBool("isFlat", false);
@@ -205,6 +212,8 @@ int main() {
   waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0));
   Loader grassLoader = Loader();
   grassRenderer = new GrassRenderer(grassLoader, grassShader, glm::mat4(1.0));
+  Loader snowyGrassLoader = Loader();
+  snowyGrassRenderer = new SnowyGrassRenderer(snowyGrassLoader, snowyGrassShader, glm::mat4(1.0));
   // std::vector<Water> waters;
   // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2,
   // chunkHeight/2));
@@ -261,6 +270,11 @@ int main() {
     grassRenderer->loadProjectionMatrix(projection);
     grassRenderer->render(camera);
 
+    // -------- Snowy Grass -----------
+    snowyGrassShader.use();
+    snowyGrassRenderer->loadProjectionMatrix(projection);
+    snowyGrassRenderer->render(camera);
+
     // Measure speed in ms per frame
     double currentTime = glfwGetTime();
     nbFrames++;
@@ -287,7 +301,7 @@ int main() {
   //     glDeleteBuffers(3, VBO);
   //     glDeleteBuffers(1, &EBO);
   grassRenderer->unbind();
-
+  snowyGrassRenderer->unbind();
   glfwTerminate();
 
   return 0;
@@ -474,12 +488,14 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset,
   std::vector<float> colors;
   std::vector<float> water_vertices;
   std::vector<float> grass_vertices;
+  std::vector<float> snowy_grass_vertices;
 
   // Generate map
   indices = generate_indices();
   noise_map = generate_noise_map(xOffset, yOffset);
   vertices = generate_vertices(noise_map);
   grass_vertices = generate_grass_vertices(vertices);
+  snowy_grass_vertices = generate_snowy_grass_vertices(vertices);
   water_vertices = generate_water_vertices(vertices);
   normals = generate_normals(indices, vertices);
   colors = generate_biome(vertices, plants, xOffset, yOffset);
@@ -491,6 +507,7 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset,
       water_plane_height, -chunkWidth / 2.0 + (chunkWidth - 1) * yOffset);
 
   grassRenderer->setUpVAO(grass_vertices, idx);
+  snowyGrassRenderer->setUpVAO(snowy_grass_vertices, idx);
 
   GLuint VBO[3], EBO;
 
@@ -762,6 +779,32 @@ std::vector<float> generate_grass_vertices(std::vector<float> &vertices) {
     }
   }
   return grass_vertices;
+}
+
+std::vector<float> generate_snowy_grass_vertices(std::vector<float> &vertices) {
+  vector<float> snowy_grass_vertices;
+  for (int i = 1; i < vertices.size(); i += 3) { // x, y, z, so look at y
+    int rate = 3;
+    if (vertices[i] > 0.5 * meshHeight && (1 + rand() % 10) < rate) {
+      snowy_grass_vertices.push_back(vertices[i - 1]);
+      snowy_grass_vertices.push_back(vertices[i]);
+      snowy_grass_vertices.push_back(vertices[i + 1]);
+
+      snowy_grass_vertices.push_back(vertices[i - 1] - 0.5);
+      snowy_grass_vertices.push_back(vertices[i]);
+      snowy_grass_vertices.push_back(vertices[i + 1] - 0.5);
+      snowy_grass_vertices.push_back(vertices[i - 1] + 0.5);
+      snowy_grass_vertices.push_back(vertices[i]);
+      snowy_grass_vertices.push_back(vertices[i + 1] - 0.5);
+      snowy_grass_vertices.push_back(vertices[i - 1] - 0.5);
+      snowy_grass_vertices.push_back(vertices[i]);
+      snowy_grass_vertices.push_back(vertices[i + 1] + 0.5);
+      snowy_grass_vertices.push_back(vertices[i - 1] + 0.5);
+      snowy_grass_vertices.push_back(vertices[i]);
+      snowy_grass_vertices.push_back(vertices[i + 1] + 0.5);
+        }
+  }
+  return snowy_grass_vertices;
 }
 
 std::vector<float> generate_water_vertices(std::vector<float> &vertices) {
