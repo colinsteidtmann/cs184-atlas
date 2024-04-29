@@ -135,15 +135,15 @@ public:
         // Shader program
         ID = glCreateProgram();
         glAttachShader(ID, vertexShaderID);
-        glAttachShader(ID, fragmentShaderID);
         glAttachShader(ID, geometryShaderID);
+        glAttachShader(ID, fragmentShaderID);
         glLinkProgram(ID);
         checkCompileErrors(ID, "PROGRAM");
 
         // Delete the shaders as they're now linked into program
         glDeleteShader(vertexShaderID);
-        glDeleteShader(fragmentShaderID);
         glDeleteShader(geometryShaderID);
+        glDeleteShader(fragmentShaderID);
     }
 
     // Use and activate the shader
@@ -193,11 +193,15 @@ public:
     void setMat4(const std::string &name, const glm::mat4 &mat) const {
         glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     }
+    void setSampler2D(const std::string &name, int value) const {
+        glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+    }
 
-private:
-    // utility function for checking shader compilation/linking errors.
-    // ------------------------------------------------------------------------
-    void checkCompileErrors(GLuint shader, std::string type) {
+        private :
+        // utility function for checking shader compilation/linking errors.
+        // ------------------------------------------------------------------------
+        void checkCompileErrors(GLuint shader, std::string type)
+    {
         GLint success;
         GLchar infoLog[1024];
         if(type != "PROGRAM") {

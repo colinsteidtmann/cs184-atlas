@@ -1,8 +1,16 @@
-#version 330
+#version 410 core
+layout (location = 0) in vec3 aPos;
 
-layout (location = 0) in vec3 inPosition;
+/*
+out VS_OUT {
+    
+} vs_out;
+*/
 
-void main()
-{
-	gl_Position = vec4(inPosition, 1.0);
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_model;
+
+void main() {
+	gl_Position = vec4(aPos, 1.0); 
 }
