@@ -881,30 +881,7 @@ void processInput(GLFWwindow *window, Shader &shader) {
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
   }
 
-  // Enable grass
-  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
-    GRASS_ENABLED = true;
-  }
-
-  // Disable grass
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
-        glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
-        GRASS_ENABLED = false;
-    }
-
-  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    camera.ProcessKeyboard(FORWARD, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    camera.ProcessKeyboard(BACKWARD, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-    camera.ProcessKeyboard(LEFT, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-    camera.ProcessKeyboard(RIGHT, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-    camera.ProcessKeyboard(UP, deltaTime);
-  if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
-    camera.ProcessKeyboard(DOWN, deltaTime);
-
+  // Enable specific fog
   for (int i = 0; i < fogKeys.size(); i++) {
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS &&
         glfwGetKey(window, fogKeys[i]) == GLFW_PRESS) {
@@ -919,6 +896,7 @@ void processInput(GLFWwindow *window, Shader &shader) {
     }
   }
 
+  // Disable all fog
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
       glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
     shader.use();
@@ -926,6 +904,30 @@ void processInput(GLFWwindow *window, Shader &shader) {
       shader.setBool(fogTypes[i], false);
     }
   }
+
+  // Enable grass
+  if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+    GRASS_ENABLED = true;
+  }
+
+  // Disable grass
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
+      glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
+    GRASS_ENABLED = false;
+  }
+
+  if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    camera.ProcessKeyboard(FORWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    camera.ProcessKeyboard(BACKWARD, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+    camera.ProcessKeyboard(LEFT, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+    camera.ProcessKeyboard(RIGHT, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    camera.ProcessKeyboard(UP, deltaTime);
+  if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
+    camera.ProcessKeyboard(DOWN, deltaTime);
 }
 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos) {
