@@ -9,10 +9,13 @@
 
 class GrassRenderer
 {
+public:
+    void unbind();
+
 private:
     GrassShader shader;
     Loader loader;
-    void unbind();
+    
     unsigned int texture1;
 
     public : GrassRenderer(Loader loader, GrassShader grass_shader, glm::mat4 projectionMatrix);

@@ -6,7 +6,7 @@
 
 GrassRenderer::GrassRenderer(Loader loader, GrassShader grass_shader, glm::mat4 projectionMatrix) : shader(grass_shader)
 {
-    this->loader=loader;
+    this->loader = loader;
     quad_chunks = new RawModel[xMapChunks * yMapChunks];
     std::string path = getCurrentWorkingDirectory() + "/resources/textures/grass_texture.png";
     this->texture1 = loadTextureFromFile(path.c_str());
@@ -15,27 +15,35 @@ GrassRenderer::GrassRenderer(Loader loader, GrassShader grass_shader, glm::mat4 
     shader.use();
     glUniform1i(glGetUniformLocation(shader.ID, "u_textgrass"), 0);
     shader.loadProjectionMatrix(projectionMatrix);
+    float distance = std::max(chunkWidth, chunkHeight) * chunk_render_distance;
+    shader.setFloat("u_distance", distance);
+    shader.setSampler2D("u_wind", 1);
 }
 
-void GrassRenderer::unbind() {
-    // TODO: Implement unbind
+void GrassRenderer::unbind()
+{
+    int numVao = yMapChunks * xMapChunks;
+    for (int i = 0; i < numVao; i++)
+    {
+        glDeleteVertexArrays(1, &quad_chunks[i].VAO);
+    }
     glDisableVertexAttribArray(0);
     glBindVertexArray(0);
     glUseProgram(0);
 }
 
-void GrassRenderer::render(Camera camera) {
+void GrassRenderer::render(Camera camera)
+{
     shader.use();
     shader.loadViewMatrix(camera);
-    shader.setSampler2D("u_wind",1);
     shader.setFloat("u_time", glfwGetTime());
+    shader.setVec3("u_cameraPosition", camera.Position);
+    shader.setBool("u_grassEnabled",GRASS_ENABLED);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture1);
-    
 
     gridPosX = (int)(camera.Position.x - originX) / chunkWidth + xMapChunks / 2;
     gridPosY = (int)(camera.Position.z - originY) / chunkHeight + yMapChunks / 2;
-
     for (int y = 0; y < yMapChunks; y++)
     {
         for (int x = 0; x < xMapChunks; x++)
@@ -44,19 +52,21 @@ void GrassRenderer::render(Camera camera) {
             // Only render chunk if it's within render distance
             if (std::abs(gridPosX - x) <= chunk_render_distance && (y - gridPosY) <= chunk_render_distance)
             {
-                shader.use();
+
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) * y));
                 shader.loadModelMatrix(model);
+                
                 glBindVertexArray(quad.VAO);
                 glDrawArrays(GL_POINTS, 0, quad.vertexCount);
-                std::cout<<"qudad vertex count - "<<quad.vertexCount<<std::endl;
+                
             }
         }
     }
 }
 
-void GrassRenderer::loadProjectionMatrix(glm::mat4 projectionMatrix) {
+void GrassRenderer::loadProjectionMatrix(glm::mat4 projectionMatrix)
+{
     shader.loadProjectionMatrix(projectionMatrix);
 }
 

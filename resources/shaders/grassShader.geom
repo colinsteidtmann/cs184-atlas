@@ -14,6 +14,7 @@ uniform mat4 u_model;
 uniform vec3 u_cameraPosition;
 uniform sampler2D u_wind;
 uniform float u_time;
+uniform float u_distance;
 
 /* CONST PARAMETERS */
 const float c_min_size = 0.4f;
@@ -59,11 +60,10 @@ void createQuad(vec3 base_position, mat4 crossmodel){
 	mat4 modelRandY = rotationY(random(base_position.zx)*PI);
  
 	for(int i = 0; i < 4; i++) {
-        if (i == 2 ) modelWindApply = modelWind;
-	    gl_Position = u_projection * u_view* u_model * (gl_in[0].gl_Position + modelWindApply*modelRandY*crossmodel*grass_size*vertexPosition[i]);
+        //if (i == 2 ) modelWindApply = modelWind;
+	    gl_Position = u_projection * u_view* u_model *(gl_in[0].gl_Position+crossmodel*(vertexPosition[i]*grass_size));
 	    gs_out.textCoord = textCoords[i];
 		gs_out.colorVariation = fbm(gl_in[0].gl_Position.xz);
-        gl_PointSize=10.0f;
 	    EmitVertex();
     }
     EndPrimitive();
@@ -74,8 +74,8 @@ void createGrass(int numberQuads)
 {
 	mat4 model0, model45, modelm45;
 	model0 = mat4(1.0f);
-	model45 = rotationY(radians(45));
-	modelm45 = rotationY(-radians(45));
+	model45 = rotationY(radians(45.0f));
+	modelm45 = rotationY(-radians(45.0f));
 
 	switch(numberQuads) {
 		case 1: {
@@ -96,9 +96,17 @@ void createGrass(int numberQuads)
 	}
 }
  
-void main(){
-    grass_size = random(gl_in[0].gl_Position.xz) * (1.0f - c_min_size) + c_min_size;
-    createGrass(3);
+void main(){	
+    float dist_length = length(gl_in[0].gl_Position.xyz - u_cameraPosition);
+    float ratio = dist_length/u_distance;
+    if(ratio<1.2)grass_size=5.0f;
+    else if(ratio<1.4)grass_size=4.0f;
+    else if(ratio<1.6)grass_size=3.0f;
+    else if(ratio<1.8)grass_size=2.0f;
+    else if(ratio<2)grass_size=1.0f;
+    else grass_size=0.0f; 
+    
+	createGrass(3);
 } 
 
 

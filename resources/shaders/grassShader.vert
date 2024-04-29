@@ -10,7 +10,8 @@ out VS_OUT {
 uniform mat4 u_projection;
 uniform mat4 u_view;
 uniform mat4 u_model;
-
+uniform bool u_grassEnabled;
 void main() {
-	gl_Position = vec4(aPos, 1.0); 
+	vec4 liftedPosition = vec4(aPos.x, aPos.y + .05, aPos.z, 1.0);
+	gl_Position = liftedPosition; 
 }

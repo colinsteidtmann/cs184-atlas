@@ -8,3 +8,4 @@ extern int gridPosX;
 extern int gridPosY;
 extern float originX;
 extern float originY;
+extern bool GRASS_ENABLED;

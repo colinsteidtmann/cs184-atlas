@@ -110,6 +110,7 @@ float currentFrame;
 
 vector<int> fogKeys;
 vector<string> fogTypes;
+bool GRASS_ENABLED=false;
 
 // void generate_rectangle(GLuint &VAO) {
 //     // Define vertices for a rectangle
@@ -266,6 +267,7 @@ int main()
     // TODO VBOs and EBOs aren't being deleted
     //     glDeleteBuffers(3, VBO);
     //     glDeleteBuffers(1, &EBO);
+    grassRenderer->unbind();
 
     glfwTerminate();
 
@@ -731,11 +733,24 @@ std::vector<float> generate_grass_vertices(std::vector<float> &vertices)
     vector<float> grass_vertices;
     for (int i = 1; i < vertices.size(); i += 3)
     { // x, y, z, so look at y
-        if (vertices[i] <= 0.5 * meshHeight)
+        if (vertices[i] <= 0.5 * meshHeight && vertices[i] > WATER_HEIGHT * meshHeight)
         {
             grass_vertices.push_back(vertices[i - 1]);
             grass_vertices.push_back(vertices[i]);
             grass_vertices.push_back(vertices[i + 1]);
+
+            grass_vertices.push_back(vertices[i - 1]-0.5);
+            grass_vertices.push_back(vertices[i]);
+            grass_vertices.push_back(vertices[i + 1]-0.5);
+            grass_vertices.push_back(vertices[i - 1] + 0.5);
+            grass_vertices.push_back(vertices[i]);
+            grass_vertices.push_back(vertices[i + 1]-0.5);
+            grass_vertices.push_back(vertices[i - 1] - 0.5);
+            grass_vertices.push_back(vertices[i]);
+            grass_vertices.push_back(vertices[i + 1] + 0.5);
+            grass_vertices.push_back(vertices[i - 1] + 0.5);
+            grass_vertices.push_back(vertices[i]);
+            grass_vertices.push_back(vertices[i + 1] + 0.5);
         }
     }
     return grass_vertices;
@@ -852,13 +867,13 @@ void processInput(GLFWwindow *window, Shader &shader)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     // Enable flat mode
-    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
     {
         shader.use();
         shader.setBool("isFlat", true);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS && glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
     {
         shader.use();
         shader.setBool("isFlat", false);
@@ -877,6 +892,8 @@ void processInput(GLFWwindow *window, Shader &shader)
         camera.ProcessKeyboard(UP, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_CAPS_LOCK) == GLFW_PRESS)
         camera.ProcessKeyboard(DOWN, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
+        GRASS_ENABLED=!GRASS_ENABLED;
 
     for (int i = 0; i < fogKeys.size(); i++)
     {

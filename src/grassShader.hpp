@@ -28,7 +28,6 @@ public:
     {
         glm::mat4 viewMatrix = camera.GetViewMatrix();
         this->setMat4("u_view", viewMatrix);
-        this->setVec3("u_cameraPosition",camera.Position);
     }
 
     void loadModelMatrix(const glm::mat4 &modelMatrix)
