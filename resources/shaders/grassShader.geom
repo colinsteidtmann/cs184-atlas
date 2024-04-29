@@ -1,6 +1,6 @@
 #version 410 core
 layout (points) in;
-layout (triangle_strip, max_vertices = 4) out;
+layout (triangle_strip, max_vertices = 12) out;
 // in VS_OUT {} gs_in[];
  
 out GS_OUT {
@@ -17,7 +17,8 @@ uniform float u_time;
 uniform float u_distance;
 
 /* CONST PARAMETERS */
-const float c_min_size = 0.4f;
+const float c_min_size = 0.5f;
+const float c_max_size = 3.0f;
 const float LOD1 = 5.0f;
 const float LOD2 = 10.0f;
 const float LOD3 = 20.0f;
@@ -58,11 +59,16 @@ void createQuad(vec3 base_position, mat4 crossmodel){
 
     // random rotation on Y
 	mat4 modelRandY = rotationY(random(base_position.zx)*PI);
- 
+
+	// random grass size
+    grass_size = random(gl_in[0].gl_Position.xz) * (c_max_size - c_min_size) + c_min_size;
+
+    // billboard creation loop
 	for(int i = 0; i < 4; i++) {
-        //if (i == 2 ) modelWindApply = modelWind;
-	    gl_Position = u_projection * u_view* u_model *(gl_in[0].gl_Position+crossmodel*(vertexPosition[i]*grass_size));
-	    gs_out.textCoord = textCoords[i];
+        if (i == 2 ) modelWindApply = modelWind;
+	    gl_Position = u_projection * u_view* u_model *(gl_in[0].gl_Position+modelRandY*crossmodel*(vertexPosition[i]*grass_size));
+	    // gl_Position = u_projection * u_view* u_model *(gl_in[0].gl_Position+modelWindApply*modelRandY*crossmodel*(vertexPosition[i]*grass_size));
+        gs_out.textCoord = textCoords[i];
 		gs_out.colorVariation = fbm(gl_in[0].gl_Position.xz);
 	    EmitVertex();
     }
@@ -97,15 +103,14 @@ void createGrass(int numberQuads)
 }
  
 void main(){	
-    float dist_length = length(gl_in[0].gl_Position.xyz - u_cameraPosition);
-    float ratio = dist_length/u_distance;
-    if(ratio<1.2)grass_size=5.0f;
-    else if(ratio<1.4)grass_size=4.0f;
-    else if(ratio<1.6)grass_size=3.0f;
-    else if(ratio<1.8)grass_size=2.0f;
-    else if(ratio<2)grass_size=1.0f;
-    else grass_size=0.0f; 
-    
+    //float dist_length = length(gl_in[0].gl_Position.xyz - u_cameraPosition);
+    //float ratio = dist_length/u_distance;
+    //if(ratio<1.2)grass_size=5.0f;
+    //else if(ratio<1.4)grass_size=4.0f;
+    //else if(ratio<1.6)grass_size=3.0f;
+    //else if(ratio<1.8)grass_size=2.0f;
+    //else if(ratio<2)grass_size=1.0f;
+    //else grass_size=0.0f;
 	createGrass(3);
 } 
 
