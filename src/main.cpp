@@ -82,6 +82,8 @@ SnowyGrassRenderer *snowyGrassRenderer;
 
 // Map params
 float WATER_HEIGHT = 0.1;
+float GRASS_1_HEIGHT = 0.4;
+float GRASS_2_HEIGHT = 0.5;
 int chunk_render_distance = 3;
 const int xMapChunks = 10;
 const int yMapChunks = 10;
@@ -622,9 +624,9 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
   biomeColors.push_back(
       terrainColor(WATER_HEIGHT, get_color(60, 100, 190))); // Shallow water
   biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130))); // Sand
-  biomeColors.push_back(terrainColor(0.40, get_color(95, 165, 30))); // Grass 1
+  biomeColors.push_back(terrainColor(GRASS_1_HEIGHT, get_color(95, 165, 30))); // Grass 1
   biomeColors.push_back(terrainColor(
-      0.50, get_color(65, 115, 20))); // Grass 2              // Grass 2
+      GRASS_2_HEIGHT, get_color(65, 115, 20))); // Grass 2              // Grass 2
   biomeColors.push_back(terrainColor(0.65, get_color(90, 65, 60)));    // Rock 1
   biomeColors.push_back(terrainColor(0.80, get_color(75, 60, 55)));    // Rock 2
   biomeColors.push_back(terrainColor(1.2, get_color(220, 220, 220)));  // Snow 1
@@ -657,7 +659,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
       }
     }
 
-    if (k > 0) {
+    if (k > 0 && k < biomeColors.size() - 2) {
       glm::vec3 prevColor = biomeColors[k - 1].color;
       glm::vec3 currColor = biomeColors[k].color;
 
@@ -758,8 +760,8 @@ std::vector<int> generate_indices() {
 std::vector<float> generate_grass_vertices(std::vector<float> &vertices) {
   vector<float> grass_vertices;
   for (int i = 1; i < vertices.size(); i += 3) { // x, y, z, so look at y
-    if (vertices[i] <= 0.5 * meshHeight &&
-        vertices[i] > WATER_HEIGHT * meshHeight) {
+    if (vertices[i] >= GRASS_1_HEIGHT * 0.85 * meshHeight &&
+        vertices[i] <= GRASS_2_HEIGHT * 1.1 * meshHeight) {
       grass_vertices.push_back(vertices[i - 1]);
       grass_vertices.push_back(vertices[i]);
       grass_vertices.push_back(vertices[i + 1]);
