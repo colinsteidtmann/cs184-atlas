@@ -1,6 +1,6 @@
 #version 410 core
 layout (points) in;
-layout (triangle_strip, max_vertices = 12) out;
+layout (triangle_strip, max_vertices = 8) out;
 // in VS_OUT {} gs_in[];
  
 out GS_OUT {
