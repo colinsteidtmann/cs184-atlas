@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include <math.h>
@@ -21,6 +22,7 @@
 
 #include <queue>
 #include <unordered_set>
+#include <algorithm>
 
 
 using namespace std;
@@ -441,7 +443,6 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset, std::vector<plant
     indices = generate_indices();
     noise_map = generate_noise_map(xOffset, yOffset);
     vertices = generate_vertices(noise_map);
-    // cout<<"Verts: " << vertices.size() << ' ';
     water_vertices = generate_water_vertices(vertices);
     normals = generate_normals(indices, vertices);
     colors = generate_biome(vertices, plants, xOffset, yOffset);
@@ -555,8 +556,8 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
     glm::vec3 color = get_color(255, 255, 255);
     
     // NOTE: Terrain color height is a value between 0 and 1
-    biomeColors.push_back(terrainColor(WATER_HEIGHT * 0.5, get_color(60,  95, 190)));   // Deep water
-    biomeColors.push_back(terrainColor(WATER_HEIGHT,        get_color(60, 100, 190)));  // Shallow water
+    biomeColors.push_back(terrainColor(WATER_HEIGHT * 0.5, get_color(162,  232, 232)));   // Deep water
+    biomeColors.push_back(terrainColor(WATER_HEIGHT,        get_color(162,  232, 232)));  // Shallow water
     biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130)));                // Sand
     biomeColors.push_back(terrainColor(0.40, get_color( 95, 165,  30)));                // Grass 1
     biomeColors.push_back(terrainColor(0.50, get_color( 65, 115,  20)));                // Grass 2              // Grass 2
@@ -644,10 +645,14 @@ std::vector<float> generate_normals(const std::vector<int> &indices, const std::
 
 std::vector<float> generate_vertices(const std::vector<float> &noise_map) {
     std::vector<float> v;
-    
+    // int min_x = std::numeric_limits<int>::max();
+    // int max_x = std::numeric_limits<int>::min();
+
     for (int y = 0; y < chunkHeight + 1; y++)
         for (int x = 0; x < chunkWidth; x++) {
             v.push_back(x);
+            // min_x = std::min(x, min_x);
+            // max_x = std::max(x, max_x);
             // Apply cubic easing to the noise
             float easedNoise = std::pow(noise_map[x + y*chunkWidth] * 1.1, 3);
             // Scale noise to match meshHeight
@@ -656,6 +661,8 @@ std::vector<float> generate_vertices(const std::vector<float> &noise_map) {
             // v.push_back(std::fmax(easedNoise * meshHeight, WATER_HEIGHT * 0.5 * meshHeight));
             v.push_back(y);
         }
+    
+    // cout << min_x << " " << max_x << " ";
     return v;
 }
 

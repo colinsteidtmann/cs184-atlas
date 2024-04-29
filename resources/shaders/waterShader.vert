@@ -1,7 +1,7 @@
 #version 330 core
 in vec2 position;
 
-out vec2 textureCoords;
+out vec4 clip_space;
 
 uniform mat4 u_projection;
 uniform mat4 u_view;
@@ -10,10 +10,10 @@ uniform mat4 u_model;
 
 void main(void) {
 
-	gl_Position = u_projection * u_view * u_model * vec4(position.x, 0, position.y, 1.0);
-	float plane_width = 127 * 3; // xMapChunks * chunkWidth;
-	float plane_height = 127 * 3; // yMapChunks * chunkHeight;
-
-	textureCoords = vec2(position.x/plane_width/2.0 + 0.5, position.y/plane_height/2.0 + 0.5); // Normalize, then make it from 0 -> 1?
+	clip_space = u_projection * u_view * u_model * vec4(position.x, 0, position.y, 1.0);
+	gl_Position = clip_space;
+	// float plane_width = 127 * 3; // xMapChunks * chunkWidth;
+	// float plane_height = 127 * 3; // yMapChunks * chunkHeight;
+	//textureCoords = vec2(position.x/plane_width/2.0 + 0.5, position.y/plane_height/2.0 + 0.5); // Normalize, then make it from 0 -> 1?
  
 }
