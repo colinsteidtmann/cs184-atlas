@@ -1,3 +1,4 @@
+#pragma once
 #include "shader.h" 
 #include "camera.h" 
 
@@ -30,6 +31,11 @@ class WaterShader : public Shader {
             // location_projectionMatrix = glad_glGetUniformLocation(this->ID, "projectionMatrix");
 		    // location_viewMatrix = glad_glGetUniformLocation(this->ID, "viewMatrix");
 		    // location_modelMatrix = glad_glGetUniformLocation(this->ID, "modelMatrix");
+        }
+        
+        void connectTextureUnits() {
+            setInt("reflectionTexture", 0);
+            setInt("refractionTexture", 1);
         }
 
         // void loadMatrix(GLint location, glm::mat4 matrix) {

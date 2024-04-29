@@ -4,12 +4,13 @@
 struct RawModel {
     GLuint VAO;
     int vertexCount;
-    
+    int numObjects;
+
     // The origin for the model's vertices
     int x;
     int y;
     int z;
-    
+
     RawModel(): VAO(0) {}
 };
 

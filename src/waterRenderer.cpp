@@ -1,13 +1,17 @@
+#pragma once
 #include "glad.h"
 #include "glm/fwd.hpp"
 #include "waterRenderer.hpp"
 #include <limits.h>
 #include <limits>
 
-WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 projectionMatrix) : shader(waterShader) {
+
+WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 projectionMatrix, WaterFrameBuffers fbos) : shader(waterShader) {
     shader.use();
     shader.loadProjectionMatrix(projectionMatrix);
     this->loader = loader;
+    this->fbos = fbos;
+    shader.connectTextureUnits();
     quad_chunks = new RawModel[xMapChunks * yMapChunks];
     // shader.stop();
     // setUpVAO(loader);
@@ -68,7 +72,10 @@ void WaterRenderer::render(Camera camera) {
                 // float units = 10.0f;
                 // glPolygonOffset(factor, units);
                 // glDisable(GL_POLYGON_OFFSET_FILL);
-                glDrawArrays(GL_TRIANGLES, 0, quad.vertexCount);
+                int vertexCount = quad.vertexCount/quad.numObjects;
+                for (int k = 0; k < quad.numObjects; k++) {
+                    glDrawArrays(GL_TRIANGLES, k * vertexCount, vertexCount);
+                }
             }
         }
     }
@@ -82,6 +89,14 @@ void WaterRenderer::loadProjectionMatrix(glm::mat4 projectionMatrix) {
 void WaterRenderer::prepareRender(Camera camera){
     shader.use();
     shader.loadViewMatrix(camera);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fbos.getReflectionTexture());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fbos.getRefractionTexture());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void WaterRenderer::unbind(){
@@ -90,13 +105,14 @@ void WaterRenderer::unbind(){
     glUseProgram(0);
 }
 
-void WaterRenderer::setUpVAO(std::vector<float> water_vertices, int idx, float x, float y, float z) {
+void WaterRenderer::setUpVAO(std::vector<float> water_vertices, int idx, float x, float y, float z, int num_quads) {
     // Just x and z vectex positions here, y is set to 0 in v.shader
     // We have all the water vertices, now make a quad out of them using the min/max of the x and z.
     RawModel quad = loader.loadToVAO(water_vertices, 2);
     quad.x = x;
     quad.y = y;
     quad.z = z;
+    quad.numObjects = num_quads;
     quad_chunks[idx] = quad;
 }
 

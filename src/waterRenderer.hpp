@@ -1,3 +1,4 @@
+#pragma once
 #include "glad.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -7,6 +8,7 @@
 #include "loader.cpp"
 #include "waterShader.hpp"
 #include "main.h"
+#include <waterFrameBuffer.cpp>
 
 struct Water {
   float x;
@@ -24,12 +26,13 @@ class WaterRenderer {
         Loader loader;
         void prepareRender(Camera camera);
         void unbind();
+        WaterFrameBuffers fbos;
 
     public:
-        WaterRenderer(Loader loader, WaterShader water_shader, glm::mat4 projectionMatrix);
+        WaterRenderer(Loader loader, WaterShader water_shader, glm::mat4 projectionMatrix, WaterFrameBuffers fbos);
         void render(Camera camera);
         void loadProjectionMatrix(glm::mat4 projectionMatrix);
         RawModel* quad_chunks;
-        void setUpVAO(std::vector<float> water_vertices, int idx, float x, float y, float z);
+        void setUpVAO(std::vector<float> water_vertices, int idx, float x, float y, float z, int num_quads);
 };
 

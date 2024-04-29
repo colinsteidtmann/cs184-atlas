@@ -19,6 +19,9 @@
 #include "waterRenderer.hpp"
 #include "waterFrameBuffer.cpp"
 
+#include <queue>
+#include <unordered_set>
+
 
 using namespace std;
 
@@ -69,8 +72,8 @@ WaterRenderer *waterRenderer;
 // Map params
 float WATER_HEIGHT = 0.1;
 int chunk_render_distance = 3;
-const int xMapChunks = 10;
-const int yMapChunks = 10;
+const int xMapChunks = 3;
+const int yMapChunks = 3;
 int chunkWidth = 127;
 int chunkHeight = 127;
 int gridPosX = 0;
@@ -183,8 +186,9 @@ int main() {
 
     // Set up water resources
     Loader loader = Loader();   
-    waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0));  
     WaterFrameBuffers* buffers = new WaterFrameBuffers();
+    waterRenderer = new WaterRenderer(loader, waterShader, glm::mat4(1.0), *buffers);  
+    
 
     // std::vector<Water> waters;
     // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2, chunkHeight/2));
@@ -437,13 +441,17 @@ void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset, std::vector<plant
     indices = generate_indices();
     noise_map = generate_noise_map(xOffset, yOffset);
     vertices = generate_vertices(noise_map);
+    // cout<<"Verts: " << vertices.size() << ' ';
     water_vertices = generate_water_vertices(vertices);
     normals = generate_normals(indices, vertices);
     colors = generate_biome(vertices, plants, xOffset, yOffset);
     
     int idx = xOffset + yOffset * xMapChunks;
+    int num_quads = water_vertices.size() / 12;
     waterRenderer->setUpVAO(water_vertices, idx, -chunkWidth / 2.0 + (chunkWidth - 1) * xOffset,
-                             water_plane_height , -chunkWidth / 2.0 + (chunkWidth - 1) * yOffset);
+                             water_plane_height , -chunkWidth / 2.0 + (chunkWidth - 1) * yOffset,
+                             num_quads);
+    // cout<<num_quads;
 
 
     GLuint VBO[3], EBO;
@@ -643,12 +651,11 @@ std::vector<float> generate_vertices(const std::vector<float> &noise_map) {
             // Apply cubic easing to the noise
             float easedNoise = std::pow(noise_map[x + y*chunkWidth] * 1.1, 3);
             // Scale noise to match meshHeight
-            // Pervent vertex height from being below WATER_HEIGHT
             v.push_back(easedNoise * meshHeight);
+            // Pervent vertex height from being below WATER_HEIGHT
             // v.push_back(std::fmax(easedNoise * meshHeight, WATER_HEIGHT * 0.5 * meshHeight));
             v.push_back(y);
         }
-    
     return v;
 }
 
@@ -677,33 +684,86 @@ std::vector<int> generate_indices() {
     return indices;
 }
 
-std::vector<float> generate_water_vertices(std::vector<float> &vertices) {
-    float max_x = 0;
-    float min_x = 127;
-    float max_z = 0;
-    float min_z = 127;
-
-    // Bug: currently just getting the bounding water box for a chunk, rather than per island within a chunk.
-    for (int i = 1; i < vertices.size(); i += 3) {
-        if (vertices[i] <= WATER_HEIGHT * meshHeight) {
-            // max_x = std::max(vertices[i-1], max_x);
-            // min_x = std::min(vertices[i-1], min_x);
-            // max_z = std::max(vertices[i+1], max_z);
-            // min_z = std::min(vertices[i+1], min_z); 
-            vertices[i] = vertices[i] * 0.7; // To prevent z-fighting with the water plane
-        } else {
-            vertices[i] += 0.05; // To prevent z-fighting with the water plane
-        }
+void add_local_water(unordered_set<int>& visited, std::vector<float>& vertices, std::vector<float>& water_vertices, int start_idx) {
+    if (visited.find(start_idx) != visited.end()) {
+        return;
     }
 
+    int num_cols = 3 * chunkWidth;
+    int num_rows = chunkHeight + 1;
+    
+    queue<int> q;
+    vector<pair<int, int>> neighbors = {
+            {-1, 0}, {1, 0}, {0, -3}, {0, 3}  // Up, down, left, right
+        }; // Heights are exactly aligned across rows, but off by three across columns
+    q.push(start_idx);
+    visited.insert(start_idx);
+
+    float max_x = -10000;
+    float min_x = 10000;
+    float max_z = -10000;
+    float min_z = 10000;
+
+    while (!q.empty()) {
+        int curr_idx = q.front();
+        q.pop();
+
+        int curr_row = curr_idx / num_cols;
+        int curr_col = curr_idx % num_cols;
+
+        // Process the vertices here (check for min_x, max_x, min_z, max_z) and modify the mesh
+        max_x = std::max(vertices[curr_idx-1], max_x);
+        min_x = std::min(vertices[curr_idx-1], min_x);
+        max_z = std::max(vertices[curr_idx+1], max_z);
+        min_z = std::min(vertices[curr_idx+1], min_z); 
+        vertices[curr_idx] = vertices[curr_idx] * 0.5;  // To prevent z-fighting
+
+        for (const auto& neighbor  : neighbors) {
+            int dr = neighbor.first;
+            int dc = neighbor.second;
+            int new_row = curr_row + dr;
+            int new_col = curr_col + dc;
+
+            // Check if the new cell is within the grid bounds and not visited
+            if (new_row >= 0 && new_row < num_rows && new_col >= 0 && new_col < num_cols) {
+                int new_idx = new_row * num_cols + new_col;
+
+                if (visited.find(new_idx) == visited.end() && 
+                    vertices[new_idx] <= WATER_HEIGHT * meshHeight) { 
+                    q.push(new_idx);
+                    visited.insert(new_idx);
+                }
+            }
+        }
+    }
+    
+    water_vertices.insert(water_vertices.end(), 
+                            {min_x, min_z, min_x, max_z,
+                            max_x, min_z, max_x, min_z,
+                            min_x, max_z, max_x, max_z});
+}
+
+
+std::vector<float> generate_water_vertices(std::vector<float> &vertices) {
+    unordered_set<int> visited;
+    std::vector<float> water_vertices;
+
+    // Bug: currently just getting the bounding water box for a chunk, rather than per island within a chunk.
+    // Vertices is an array of x y z vertices. Thus it has 3 * chunk_width * chunk_height number of elements
+    // Height vertex is always the 2nd one 
+
+    for (int i = 1; i < vertices.size(); i += 3) {
+        if (vertices[i] <= WATER_HEIGHT * meshHeight) {
+            add_local_water(visited, vertices, water_vertices, i);
+        } else {
+            vertices[i] += 0.1; // To prevent z-fighting with the water plane
+        }
+    }
     // std::cout << min_x << " " << max_x << " " << min_z << " " << max_z << " ";
-    
-    std::vector<float> water_vertices = {min_x, min_z, min_x, max_z,
-                                            max_x, min_z, max_x, min_z,
-                                            min_x, max_z, max_x, max_z};
-    
     return water_vertices;
 }
+
+
 
 // Initialize GLFW and GLAD
 int init() {
