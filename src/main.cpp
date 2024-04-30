@@ -123,7 +123,7 @@ std::vector<std::string> faces;
 float WATER_HEIGHT = 0.1;
 float GRASS_1_HEIGHT = 0.4;
 float GRASS_2_HEIGHT = 0.5;
-int chunk_render_distance = 3;
+int chunk_render_distance = 4;
 const int xMapChunks = 10;
 const int yMapChunks = 10;
 int chunkWidth = 127;
@@ -135,7 +135,7 @@ float originY = (chunkHeight * yMapChunks) / 2 - chunkHeight / 2;
 
 // Noise params
 int octaves = 5;
-float meshHeight = 32; // Vertical scaling
+float meshHeight = 40; // Vertical scaling
 float noiseScale = 64; // Horizontal scaling
 float persistence = 0.5;
 float lacunarity = 2;
@@ -453,7 +453,7 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view,
         glBindVertexArray(map_chunks[x + y * xMapChunks]);
         glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
 
-        // Plant chunks
+        //plant chunks;
         // model = glm::mat4(1.0f);
         // model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 +
         // (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) *
