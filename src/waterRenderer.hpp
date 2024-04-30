@@ -33,7 +33,9 @@ class WaterRenderer {
         void unbind();
         WaterFrameBuffers fbos;
         std::string DUDV_MAP = "waterDUDV";
+        std::string NORMAL_MAP= "normalMap";
         int dudvTexture;
+        int normal_map;
         float WAVE_SPEED = 0.03;
         float move_factor = 0;
         double elapsed;

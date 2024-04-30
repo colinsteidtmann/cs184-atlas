@@ -13,6 +13,7 @@ WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 p
     this->loader = loader;
     this->fbos = fbos;
     dudvTexture = loader.loadTexture(DUDV_MAP);
+    normal_map = loader.loadTexture(NORMAL_MAP);
     shader.connectTextureUnits();
     quad_chunks = new RawModel[xMapChunks * yMapChunks];
     elapsed = 0.0;
@@ -102,6 +103,8 @@ void WaterRenderer::prepareRender(Camera camera) {
     glBindTexture(GL_TEXTURE_2D, fbos.getRefractionTexture());
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, dudvTexture);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, normal_map);
 }
 
 void WaterRenderer::unbind(){

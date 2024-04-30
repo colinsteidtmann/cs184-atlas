@@ -37,6 +37,7 @@ class WaterShader : public Shader {
             setInt("reflectionTexture", 0);
             setInt("refractionTexture", 1);
             setInt("dudvMap", 2);
+            setInt("normal_map", 3);
         }
 
         void loadMoveFactor(float factor) {
@@ -61,6 +62,7 @@ class WaterShader : public Shader {
             glm::mat4 viewMatrix = camera.GetViewMatrix();
             // loadMatrix(location_viewMatrix, viewMatrix);
             this->setMat4("u_view", viewMatrix);
+            this->setVec3("camera_position", camera.Position);
         }
 
         void loadModelMatrix(const glm::mat4& modelMatrix) {
