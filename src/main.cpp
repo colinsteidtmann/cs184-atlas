@@ -28,8 +28,8 @@
 #include <unordered_set>
 
 using namespace std;
-// GLuint WIDTH = 1920, HEIGHT = 1080;
-GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
+GLint WIDTH = 1920, HEIGHT = 1080;
+//GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
 
 // Structs
 struct plant {
