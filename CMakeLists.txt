@@ -31,7 +31,7 @@ set(CMAKE_CXX_STANDARD 14)            # enable c++14 standard
 set(RESOURCES_DIR "${PROJECT_SOURCE_DIR}/resources")
 
 # add source files
-set(SOURCE_FILES lib/glad.c src/main.cpp src/loader.cpp src/waterRenderer.cpp src/grassRenderer.cpp src/snowyGrassRenderer.cpp lib/stb_image.cpp lib/stb_image.hpp src/stb_image.cpp src/waterFrameBuffer.cpp)
+set(SOURCE_FILES lib/glad.c src/main.cpp src/loader.cpp src/waterRenderer.cpp src/grassRenderer.cpp src/snowyGrassRenderer.cpp lib/stb_image.cpp lib/stb_image.hpp src/waterFrameBuffer.cpp)
 
 # add executable target with source files listed in SOURCE_FILES variable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})

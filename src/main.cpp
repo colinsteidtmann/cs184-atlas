@@ -124,8 +124,8 @@ float WATER_HEIGHT = 0.1;
 float GRASS_1_HEIGHT = 0.4;
 float GRASS_2_HEIGHT = 0.5;
 int chunk_render_distance = 3;
-const int xMapChunks = 3;
-const int yMapChunks = 3;
+const int xMapChunks = 10;
+const int yMapChunks = 10;
 int chunkWidth = 127;
 int chunkHeight = 127;
 int gridPosX = 0;
@@ -300,6 +300,26 @@ int main() {
 
     render(map_chunks, fogShader, view, model, projection, nIndices,
            tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
+
+    if (SKY_BOX_ENABLED) {
+      glDepthFunc(GL_LEQUAL);
+      skyboxShader.use();
+      glm::mat4 removed_translation_view = glm::mat4(glm::mat3(view));
+
+      skyboxShader.setMat4("u_projection", projection);
+      skyboxShader.setMat4("u_view", removed_translation_view);
+
+      // skybox cube
+      glBindVertexArray(skyboxVAO);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+      glBindVertexArray(0);
+      glDepthFunc(GL_LESS);
+    }
+    fogShader.use();
     buffers->unbindCurrentFrameBuffer();
     camera.Position.y += distance;
     camera.Pitch = -camera.Pitch;

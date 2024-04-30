@@ -5,7 +5,6 @@
 #include <limits.h>
 #include <limits>
 #include <cmath>
-#include <loader.h>
 
 
 WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 projectionMatrix, WaterFrameBuffers fbos) : shader(waterShader) {

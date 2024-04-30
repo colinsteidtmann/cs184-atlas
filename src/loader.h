@@ -1,6 +1,6 @@
-#ifndef LOADER_H
-#define LOADER_H
-
+// #ifndef LOADER_H
+// #define LOADER_H
+#pragma once
 #include <vector>
 #include <glad.h>
 
@@ -30,4 +30,4 @@ public:
     GLuint loadTexture(const std::string& fileName);
 };
 
-#endif // LOADER_H
+//#endif // LOADER_H

@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "shader.h"
+#include "loader.h"
 
 class SnowyGrassShader : public Shader {
 private:
