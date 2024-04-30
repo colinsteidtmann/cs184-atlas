@@ -8,7 +8,8 @@ Atlas is an OpenGL procedural randomly generated terrain generation application 
 - Low poly, smooth, and mesh modes
 - Ambient, diffuse, and specular general shading
 - Linear, exponential, and exponential squared fog shading
-- Grass texture and shading
+- (Snowy) Grass texture and shading
+- Skybox and environment mapping
 
 ## Controls
 - `command/shift` + `Q` to exit application
@@ -26,3 +27,5 @@ Atlas is an OpenGL procedural randomly generated terrain generation application 
 - `shift` + `P` to disable flat shading
 - `G` to enable grass
 - `shift` + `G` to disable grass
+- `B` to enable skybox
+- `shift` + `B` to disable skybox

@@ -146,6 +146,7 @@ float currentFrame;
 vector<int> fogKeys;
 vector<string> fogTypes;
 bool GRASS_ENABLED = false;
+bool SKY_BOX_ENABLED = false;
 
 int main() {
   // Initalize variables
@@ -288,22 +289,24 @@ int main() {
     snowyGrassRenderer->loadProjectionMatrix(projection);
     snowyGrassRenderer->render(camera);
 
-    glDepthFunc(GL_LEQUAL);
-    skyboxShader.use();
-    glm::mat4 removed_translation_view = glm::mat4(glm::mat3(view));
+    if (SKY_BOX_ENABLED) {
+      glDepthFunc(GL_LEQUAL);
+      skyboxShader.use();
+      glm::mat4 removed_translation_view = glm::mat4(glm::mat3(view));
 
-    skyboxShader.setMat4("u_projection", projection);
-    skyboxShader.setMat4("u_view", removed_translation_view);
+      skyboxShader.setMat4("u_projection", projection);
+      skyboxShader.setMat4("u_view", removed_translation_view);
 
-    // skybox cube
-    glBindVertexArray(skyboxVAO);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    glBindVertexArray(0);
-    glDepthFunc(GL_LESS);
+      // skybox cube
+      glBindVertexArray(skyboxVAO);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glDrawArrays(GL_TRIANGLES, 0, 36);
+      glBindVertexArray(0);
+      glDepthFunc(GL_LESS);
+    }
 
     // Measure speed in ms per frame
     double currentTime = glfwGetTime();
@@ -818,8 +821,8 @@ std::vector<int> generate_indices() {
 std::vector<float> generate_grass_vertices(std::vector<float> &vertices) {
   vector<float> grass_vertices;
   for (int i = 1; i < vertices.size(); i += 3) { // x, y, z, so look at y
-    if (vertices[i] >= GRASS_1_HEIGHT * 0.85 * meshHeight &&
-        vertices[i] <= GRASS_2_HEIGHT * 1.1 * meshHeight) {
+    if (vertices[i] >= GRASS_1_HEIGHT * meshHeight &&
+        vertices[i] <= GRASS_2_HEIGHT * meshHeight) {
       grass_vertices.push_back(vertices[i - 1]);
       grass_vertices.push_back(vertices[i]);
       grass_vertices.push_back(vertices[i + 1]);
@@ -946,17 +949,20 @@ int init() {
 }
 
 void processInput(GLFWwindow *window, Shader &shader) {
+  // Close window
   if ((glfwGetKey(window, GLFW_KEY_LEFT_SUPER) == GLFW_PRESS ||
        glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) &&
       glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, true);
 
+  // Capture mouse
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
       glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
   }
 
+  // Release mouse
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
       glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
     if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
@@ -1019,6 +1025,18 @@ void processInput(GLFWwindow *window, Shader &shader) {
     GRASS_ENABLED = false;
   }
 
+  // Enable skybox
+  if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+    SKY_BOX_ENABLED = true;
+  }
+
+  // Disable skybox
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
+      glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+    SKY_BOX_ENABLED = false;
+  }
+
+  // Movement
   if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
     camera.ProcessKeyboard(FORWARD, deltaTime);
   if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
