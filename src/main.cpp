@@ -45,26 +45,6 @@ struct plant {
   }
 };
 
-float skyboxVertices[] = {
-    // positions
-    -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
-    1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
-
-    -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
-    -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
-
-    1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
-
-    -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
-
-    -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
-    1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
-
-    -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
-    1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
-
 // Functions
 int init();
 void processInput(GLFWwindow *window, Shader &shader);
@@ -101,6 +81,37 @@ GLFWwindow *window;
 WaterRenderer *waterRenderer;
 GrassRenderer *grassRenderer;
 SnowyGrassRenderer *snowyGrassRenderer;
+
+vector<int> fogKeys;
+vector<string> fogTypes;
+bool GRASS_ENABLED = false;
+bool SKY_BOX_ENABLED = false;
+
+float skyboxVertices[] = {
+    // positions
+    -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+    -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+
+    1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+
+    -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+
+GLuint cubemapTexture;
+const std::string skybox_path = "../resources/textures/skybox";
+std::vector<std::string> skybox_names;
+std::vector<std::string> skybox_faces;
+std::vector<std::string> faces;
 
 // Map params
 float WATER_HEIGHT = 0.1;
@@ -143,11 +154,6 @@ float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 float currentFrame;
 
-vector<int> fogKeys;
-vector<string> fogTypes;
-bool GRASS_ENABLED = false;
-bool SKY_BOX_ENABLED = false;
-
 int main() {
   // Initalize variables
   glm::mat4 view;
@@ -189,14 +195,18 @@ int main() {
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
-  // load textures
-  vector<std::string> faces = {"../resources/textures/skybox/right.jpg",
-                               "../resources/textures/skybox/left.jpg",
-                               "../resources/textures/skybox/top.jpg",
-                               "../resources/textures/skybox/bottom.jpg",
-                               "../resources/textures/skybox/front.jpg",
-                               "../resources/textures/skybox/back.jpg"};
-  GLuint cubemapTexture = loadCubeMap(faces);
+  skybox_names = {
+      "bright",
+      "dusk",
+      "mountains",
+      "sunny",
+  };
+
+  skybox_faces = {
+      "right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "front.jpg", "back.jpg",
+  };
+
+  faces = {"", "", "", "", "", ""};
 
   // Default to coloring to flat mode
   fogShader.use();
@@ -1025,8 +1035,16 @@ void processInput(GLFWwindow *window, Shader &shader) {
     GRASS_ENABLED = false;
   }
 
-  // Enable skybox
+  // Enable random skybox
   if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+    SKY_BOX_ENABLED = false;
+    // randomly choose an index between 0 and skybox_names.size() - 1
+    int index = rand() % skybox_names.size();
+    std::string texture = skybox_names[index];
+    for (int i = 0; i < faces.size(); i++) {
+      faces[i] = skybox_path + "/" + texture + "/" + skybox_faces[i];
+    }
+    cubemapTexture = loadCubeMap(faces);
     SKY_BOX_ENABLED = true;
   }
 
