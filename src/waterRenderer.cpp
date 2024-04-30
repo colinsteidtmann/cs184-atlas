@@ -98,7 +98,7 @@ void WaterRenderer::loadProjectionMatrix(glm::mat4 projectionMatrix) {
 void WaterRenderer::prepareRender(Camera camera) {
     shader.use();
     shader.loadViewMatrix(camera);
-    elapsed += 0.000003;
+    elapsed += 0.00001;
     move_factor += WAVE_SPEED * elapsed;
     move_factor = std::fmod(move_factor, 1.0);
     shader.loadMoveFactor(move_factor);

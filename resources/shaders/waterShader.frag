@@ -19,8 +19,8 @@ void main(void) {
 	vec2 refractTexCoords = ndc;
 	vec2 reflectTexCoords = vec2(ndc.x, -ndc.y);
 
-	vec2 distortion1 = (texture(dudvMap, vec2(textureCoords.x +move_factor, textureCoords.y)).rg * 2.0 - 1.0) * wave_strength;
-	vec2 distortion2 = (texture(dudvMap, vec2(-textureCoords.x, textureCoords.y + move_factor)).rg * 2.0 - 1.0) * wave_strength;
+	vec2 distortion1 = (texture(dudvMap, vec2(textureCoords.x + 2 * move_factor, textureCoords.y)).rg * 2.0 - 1.0) * wave_strength;
+	vec2 distortion2 = (texture(dudvMap, vec2(-textureCoords.x, textureCoords.y + 2 * move_factor)).rg * 2.0 - 1.0) * wave_strength;
 	vec2 total_distortion = distortion1 + distortion2;
 	
 	// vec2 distorted_tex_coords = texture(dudvMap, vec2(textureCoords.x + move_factor, textureCoords.y)).rg*0.1;
@@ -39,7 +39,7 @@ void main(void) {
 
 	vec3 view_vector = normalize(to_camera_vector);
 	float refractive_factor = dot(view_vector, vec3(0.0, 1.0, 0.0));
-	// refractive_factor = pow(refractive_factor, 5);
+	refractive_factor = pow(refractive_factor, 0.3);
 
 	// vec4 normal_map_color = texture(normal_map, distorted_tex_coords);
 	// vec3 normal = vec3(normal_map_color.r * 2.0 - 1.0, normal_map_color.b , normal_map_color.g * 2.0 - 1.0);
