@@ -226,7 +226,7 @@ int main() {
   fogShader.setVec3("light.specular", 1.0, 1.0, 1.0);
   fogShader.setVec3("light.direction", -1.0f, 1.0f, 1.0f);
   fogShader.setFloat("distance",
-                     max(chunkWidth, chunkHeight) * chunk_render_distance);
+                     max(chunkWidth, chunkHeight) * chunk_render_distance * 2);
   fogKeys.push_back(GLFW_KEY_0);
   fogKeys.push_back(GLFW_KEY_1);
   fogKeys.push_back(GLFW_KEY_2);
