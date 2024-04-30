@@ -4,12 +4,17 @@
 #include <vector>
 #include <glad.h>
 
-struct RawModel
-{
+struct RawModel {
     GLuint VAO;
     int vertexCount;
-    int x, y, z;
-    RawModel() : VAO(0) {}
+    int numObjects;
+
+    // The origin for the model's vertices
+    int x;
+    int y;
+    int z;
+
+    RawModel(): VAO(0) {}
 };
 
 class Loader
@@ -22,6 +27,7 @@ private:
 public:
     Loader() {} // Default constructor declaration
     RawModel loadToVAO(std::vector<float> positions, int dimensions);
+    GLuint loadTexture(const std::string& fileName);
 };
 
 #endif // LOADER_H

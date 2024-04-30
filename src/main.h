@@ -13,3 +13,4 @@ extern float originX;
 extern float originY;
 extern GLint WIDTH;
 extern GLint HEIGHT;
+extern bool GRASS_ENABLED;
