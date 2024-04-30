@@ -36,6 +36,11 @@ class WaterShader : public Shader {
         void connectTextureUnits() {
             setInt("reflectionTexture", 0);
             setInt("refractionTexture", 1);
+            setInt("dudvMap", 2);
+        }
+
+        void loadMoveFactor(float factor) {
+            this->setFloat("move_factor", factor);
         }
 
         // void loadMatrix(GLint location, glm::mat4 matrix) {

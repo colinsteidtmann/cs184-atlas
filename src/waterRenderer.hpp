@@ -8,7 +8,10 @@
 #include "loader.cpp"
 #include "waterShader.hpp"
 #include "main.h"
+#include <string>
 #include <waterFrameBuffer.cpp>
+
+#include <chrono>
 
 struct Water {
   float x;
@@ -20,6 +23,8 @@ struct Water {
   Water (float _x, float _z, float _height, float _x_length, float _z_length) : x(_x), z(_z), height(_height), x_length(_x_length), z_length(_z_length) {}
 };
 
+typedef std::chrono::high_resolution_clock Clock;
+
 class WaterRenderer {
     private:
         WaterShader shader;
@@ -27,6 +32,11 @@ class WaterRenderer {
         void prepareRender(Camera camera);
         void unbind();
         WaterFrameBuffers fbos;
+        std::string DUDV_MAP = "waterDUDV";
+        int dudvTexture;
+        float WAVE_SPEED = 0.03;
+        float move_factor = 0;
+        double elapsed;
 
     public:
         WaterRenderer(Loader loader, WaterShader water_shader, glm::mat4 projectionMatrix, WaterFrameBuffers fbos);

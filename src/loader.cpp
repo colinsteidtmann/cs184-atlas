@@ -1,5 +1,9 @@
+#pragma once
 #include <vector>
 #include <glad.h> 
+#include <iostream>
+#include <string>
+#include "stb_image.h"
 
 struct RawModel {
     GLuint VAO;
@@ -22,6 +26,29 @@ private:
 
 public:
     Loader() {};
+
+    GLuint loadTexture(const std::string& fileName) {
+        GLuint textureID;
+        glGenTextures(1, &textureID);
+
+        int width, height, nrChannels;
+        unsigned char* data = stbi_load(("../resources/" + fileName + ".png").c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glBindTexture(GL_TEXTURE_2D, textureID);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.4f);
+
+            stbi_image_free(data);
+        } else {
+            std::cerr << "Failed to load texture: " << fileName << ".png " << stbi_failure_reason() << std::endl;
+            std::exit(-1);
+        }
+
+        return textureID;
+    }   
 
     RawModel loadToVAO(std::vector<float> positions, int dimensions) {
         RawModel model;

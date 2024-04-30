@@ -4,6 +4,7 @@
 #include "waterRenderer.hpp"
 #include <limits.h>
 #include <limits>
+#include <cmath>
 
 
 WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 projectionMatrix, WaterFrameBuffers fbos) : shader(waterShader) {
@@ -11,8 +12,10 @@ WaterRenderer::WaterRenderer(Loader loader, WaterShader waterShader, glm::mat4 p
     shader.loadProjectionMatrix(projectionMatrix);
     this->loader = loader;
     this->fbos = fbos;
+    dudvTexture = loader.loadTexture(DUDV_MAP);
     shader.connectTextureUnits();
     quad_chunks = new RawModel[xMapChunks * yMapChunks];
+    elapsed = 0.0;
     // shader.stop();
     // setUpVAO(loader);
 }
@@ -86,13 +89,19 @@ void WaterRenderer::loadProjectionMatrix(glm::mat4 projectionMatrix) {
     shader.loadProjectionMatrix(projectionMatrix);
 }
 
-void WaterRenderer::prepareRender(Camera camera){
+void WaterRenderer::prepareRender(Camera camera) {
     shader.use();
     shader.loadViewMatrix(camera);
+    elapsed += 0.000003;
+    move_factor += WAVE_SPEED * elapsed;
+    move_factor = std::fmod(move_factor, 1.0);
+    shader.loadMoveFactor(move_factor);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbos.getReflectionTexture());
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, fbos.getRefractionTexture());
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, dudvTexture);
 }
 
 void WaterRenderer::unbind(){

@@ -228,11 +228,11 @@ int main() {
         float distance = 2 * (camera.Position.y - water_plane_height);
         camera.Position.y -= distance;  // Move the camera below the water for this reflection rendering
         camera.Pitch = -camera.Pitch;   // Also invert the pitch
+        
         render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
         buffers->unbindCurrentFrameBuffer();
         camera.Position.y += distance;
         camera.Pitch = -camera.Pitch;
-
         // Render refraction
         buffers->bindRefractionFrameBuffer();
         render(map_chunks, fogShader, view, model, projection, nIndices, tree_chunks, flower_chunks, glm::vec4(0, -1, 0, water_plane_height));
@@ -327,7 +327,7 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view, gl
     
     processInput(window, shader);
     
-    glClearColor(0.53, 0.81, 0.92, 1.0f);
+    glClearColor(0.826, 0.826, 0.826, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     // Measures number of map chunks away from origin map chunk the camera is
@@ -556,7 +556,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices, std::vecto
     glm::vec3 color = get_color(255, 255, 255);
     
     // NOTE: Terrain color height is a value between 0 and 1
-    biomeColors.push_back(terrainColor(WATER_HEIGHT * 0.5, get_color(162,  232, 232)));   // Deep water
+    biomeColors.push_back(terrainColor(WATER_HEIGHT * 0.5, get_color(162,  232, 255)));   // Deep water
     biomeColors.push_back(terrainColor(WATER_HEIGHT,        get_color(162,  232, 232)));  // Shallow water
     biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130)));                // Sand
     biomeColors.push_back(terrainColor(0.40, get_color( 95, 165,  30)));                // Grass 1
@@ -723,7 +723,7 @@ void add_local_water(unordered_set<int>& visited, std::vector<float>& vertices, 
         min_x = std::min(vertices[curr_idx-1], min_x);
         max_z = std::max(vertices[curr_idx+1], max_z);
         min_z = std::min(vertices[curr_idx+1], min_z); 
-        vertices[curr_idx] = vertices[curr_idx] * 0.5;  // To prevent z-fighting
+        vertices[curr_idx] = vertices[curr_idx] * -2;  // To prevent z-fighting
 
         for (const auto& neighbor  : neighbors) {
             int dr = neighbor.first;
