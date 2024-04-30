@@ -141,6 +141,6 @@ std::string SnowyGrassRenderer::getCurrentWorkingDirectory() {
     }
     ++i;
   }
-  std::cout << currentPath << std::endl;
+  // std::cout << currentPath << std::endl;
   return currentPath;
 }

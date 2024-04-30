@@ -141,6 +141,6 @@ std::string GrassRenderer::getCurrentWorkingDirectory() {
     }
     ++i;
   }
-  std::cout << currentPath << std::endl;
+  // std::cout << currentPath << std::endl;
   return currentPath;
 }

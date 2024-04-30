@@ -4,6 +4,7 @@
 #include <string>
 
 #include "glad.h"
+#include "stb_image.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -17,8 +18,8 @@
 #include <limits>
 
 #include "grassRenderer.hpp"
-#include "waterRenderer.hpp"
 #include "snowyGrassRenderer.hpp"
+#include "waterRenderer.hpp"
 
 using namespace std;
 
@@ -44,6 +45,26 @@ struct plant {
   }
 };
 
+float skyboxVertices[] = {
+    // positions
+    -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  -1.0f,
+    -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f, 1.0f,
+
+    1.0f,  -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f,
+
+    -1.0f, -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f, -1.0f, 1.0f,
+
+    -1.0f, 1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  1.0f,
+    1.0f,  1.0f,  1.0f,  -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f,  -1.0f,
+
+    -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, -1.0f,
+    1.0f,  -1.0f, -1.0f, -1.0f, -1.0f, 1.0f,  1.0f,  -1.0f, 1.0f};
+
 // Functions
 int init();
 void processInput(GLFWwindow *window, Shader &shader);
@@ -68,6 +89,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
 void generate_map_chunk(GLuint &VAO, int xOffset, int yOffset,
                         std::vector<plant> &plants);
 
+GLuint loadCubeMap(std::vector<std::string> faces);
 void load_model(GLuint &VAO, std::string filename);
 void setup_instancing(GLuint &VAO, std::vector<GLuint> &plant_chunk,
                       std::string plant_type, std::vector<plant> &plants,
@@ -125,41 +147,6 @@ vector<int> fogKeys;
 vector<string> fogTypes;
 bool GRASS_ENABLED = false;
 
-// void generate_rectangle(GLuint &VAO) {
-//     // Define vertices for a rectangle
-//     float vertices[] = {
-//         // Positions
-//         -10, -10, 10, // Bottom Left
-//         10, -10, 10,  // Bottom Right
-//         10, 10, 10,   // Top Right
-//         -10, 10, 10   // Top Left
-//     };
-
-//     GLuint VBO, EBO;
-
-//     // Generate buffers and arrays
-//     glGenBuffers(1, &VBO);
-//     glGenBuffers(1, &EBO);
-//     glGenVertexArrays(1, &VAO);
-
-//     // Bind VAO
-//     glBindVertexArray(VAO);
-
-//     // Bind vertices to VBO
-//     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-//     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
-//     GL_STATIC_DRAW);
-
-//     // Configure vertex position attribute
-//     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
-//     (void*)0); glEnableVertexAttribArray(0);
-
-//     // Unbind VBO and VAO
-//     glBindBuffer(GL_ARRAY_BUFFER, 0);
-//     glBindVertexArray(0);
-
-// }
-
 int main() {
   // Initalize variables
   glm::mat4 view;
@@ -171,8 +158,9 @@ int main() {
   if (init() != 0)
     return -1;
 
-  // Shader fogShader("../resources/shaders/objectShader.vert",
-  // "../resources/shaders/objectShader.frag");
+  Shader skyboxShader("../resources/shaders/skyboxShader.vert",
+                      "../resources/shaders/skyboxShader.frag");
+
   Shader fogShader("../resources/shaders/fogShader.vert",
                    "../resources/shaders/fogShader.frag");
   WaterShader waterShader(
@@ -184,9 +172,30 @@ int main() {
                           "../resources/shaders/grassShader.frag",
                           "../resources/shaders/grassShader.geom");
 
-  SnowyGrassShader snowyGrassShader("../resources/shaders/snowyGrassShader.vert",
-                          "../resources/shaders/snowyGrassShader.frag",
-                          "../resources/shaders/snowyGrassShader.geom");
+  SnowyGrassShader snowyGrassShader(
+      "../resources/shaders/snowyGrassShader.vert",
+      "../resources/shaders/snowyGrassShader.frag",
+      "../resources/shaders/snowyGrassShader.geom");
+
+  // skybox VAO
+  unsigned int skyboxVAO, skyboxVBO;
+  glGenVertexArrays(1, &skyboxVAO);
+  glGenBuffers(1, &skyboxVBO);
+  glBindVertexArray(skyboxVAO);
+  glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices,
+               GL_STATIC_DRAW);
+  glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+
+  // load textures
+  vector<std::string> faces = {"../resources/textures/skybox/right.jpg",
+                               "../resources/textures/skybox/left.jpg",
+                               "../resources/textures/skybox/top.jpg",
+                               "../resources/textures/skybox/bottom.jpg",
+                               "../resources/textures/skybox/front.jpg",
+                               "../resources/textures/skybox/back.jpg"};
+  GLuint cubemapTexture = loadCubeMap(faces);
 
   // Default to coloring to flat mode
   fogShader.use();
@@ -215,7 +224,8 @@ int main() {
   Loader grassLoader = Loader();
   grassRenderer = new GrassRenderer(grassLoader, grassShader, glm::mat4(1.0));
   Loader snowyGrassLoader = Loader();
-  snowyGrassRenderer = new SnowyGrassRenderer(snowyGrassLoader, snowyGrassShader, glm::mat4(1.0));
+  snowyGrassRenderer = new SnowyGrassRenderer(snowyGrassLoader,
+                                              snowyGrassShader, glm::mat4(1.0));
   // std::vector<Water> waters;
   // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2,
   // chunkHeight/2));
@@ -241,11 +251,12 @@ int main() {
                    "../resources/obj/Flowers.obj");
 
   while (!glfwWindowShouldClose(window)) {
-    fogShader.use();
     projection = glm::perspective(
         glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.2f,
         (float)chunkWidth * (chunk_render_distance - 1.2f));
     view = camera.GetViewMatrix();
+
+    fogShader.use();
     fogShader.setMat4("u_projection", projection);
     fogShader.setMat4("u_view", view);
     fogShader.setVec3("u_viewPos", camera.Position);
@@ -276,6 +287,23 @@ int main() {
     snowyGrassShader.use();
     snowyGrassRenderer->loadProjectionMatrix(projection);
     snowyGrassRenderer->render(camera);
+
+    glDepthFunc(GL_LEQUAL);
+    skyboxShader.use();
+    glm::mat4 removed_translation_view = glm::mat4(glm::mat3(view));
+
+    skyboxShader.setMat4("u_projection", projection);
+    skyboxShader.setMat4("u_view", removed_translation_view);
+
+    // skybox cube
+    glBindVertexArray(skyboxVAO);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+    glDepthFunc(GL_LESS);
 
     // Measure speed in ms per frame
     double currentTime = glfwGetTime();
@@ -403,6 +431,34 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view,
         // glDisable(GL_CULL_FACE);
       }
     }
+}
+
+GLuint loadCubeMap(vector<std::string> faces) {
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+  int width, height, nrChannels;
+  for (unsigned int i = 0; i < faces.size(); i++) {
+    unsigned char *data =
+        stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
+    if (data) {
+      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height,
+                   0, GL_RGB, GL_UNSIGNED_BYTE, data);
+      stbi_image_free(data);
+    } else {
+      std::cout << "Cubemap tex failed to load at path: " << faces[i]
+                << std::endl;
+      stbi_image_free(data);
+    }
+  }
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+  return textureID;
 }
 
 void load_model(GLuint &VAO, std::string filename) {
@@ -624,9 +680,11 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
   biomeColors.push_back(
       terrainColor(WATER_HEIGHT, get_color(60, 100, 190))); // Shallow water
   biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130))); // Sand
-  biomeColors.push_back(terrainColor(GRASS_1_HEIGHT, get_color(95, 165, 30))); // Grass 1
-  biomeColors.push_back(terrainColor(
-      GRASS_2_HEIGHT, get_color(65, 115, 20))); // Grass 2              // Grass 2
+  biomeColors.push_back(
+      terrainColor(GRASS_1_HEIGHT, get_color(95, 165, 30))); // Grass 1
+  biomeColors.push_back(
+      terrainColor(GRASS_2_HEIGHT,
+                   get_color(65, 115, 20))); // Grass 2              // Grass 2
   biomeColors.push_back(terrainColor(0.65, get_color(90, 65, 60)));    // Rock 1
   biomeColors.push_back(terrainColor(0.80, get_color(75, 60, 55)));    // Rock 2
   biomeColors.push_back(terrainColor(1.2, get_color(220, 220, 220)));  // Snow 1
@@ -722,7 +780,7 @@ std::vector<float> generate_vertices(const std::vector<float> &noise_map) {
       // Apply cubic easing to the noise
       float easedNoise = std::pow(noise_map[x + y * chunkWidth] * 1.1, 3);
       // Scale noise to match meshHeight
-      // Pervent vertex height from being below WATER_HEIGHT
+      // Prevent vertex height from being below WATER_HEIGHT
       v.push_back(easedNoise * meshHeight);
       // v.push_back(std::fmax(easedNoise * meshHeight, WATER_HEIGHT * 0.5 *
       // meshHeight));
@@ -804,7 +862,7 @@ std::vector<float> generate_snowy_grass_vertices(std::vector<float> &vertices) {
       snowy_grass_vertices.push_back(vertices[i - 1] + 0.5);
       snowy_grass_vertices.push_back(vertices[i]);
       snowy_grass_vertices.push_back(vertices[i + 1] + 0.5);
-        }
+    }
   }
   return snowy_grass_vertices;
 }
