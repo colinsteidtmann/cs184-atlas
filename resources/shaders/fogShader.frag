@@ -5,7 +5,7 @@ in vec3 fragPos;
 
 uniform vec3 u_viewPos;
 
-uniform vec3 fogColor = vec3(0.45);
+uniform vec3 fogColor = vec3(0.35);
 uniform float distance;
 uniform float fogExponential = 3.0;
 
