@@ -28,8 +28,8 @@
 #include <unordered_set>
 
 using namespace std;
-GLint WIDTH = 1920, HEIGHT = 1080;
-// GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
+// GLuint WIDTH = 1920, HEIGHT = 1080;
+GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
 
 // Structs
 struct plant {
@@ -300,25 +300,7 @@ int main() {
 
     render(map_chunks, fogShader, view, model, projection, nIndices,
            tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
-
-    if (SKY_BOX_ENABLED) {
-      glDepthFunc(GL_LEQUAL);
-      skyboxShader.use();
-      glm::mat4 removed_translation_view = glm::mat4(glm::mat3(view));
-
-      skyboxShader.setMat4("u_projection", projection);
-      skyboxShader.setMat4("u_view", removed_translation_view);
-
-      // skybox cube
-      glBindVertexArray(skyboxVAO);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glDrawArrays(GL_TRIANGLES, 0, 36);
-      glBindVertexArray(0);
-      glDepthFunc(GL_LESS);
-    }
+           
     fogShader.use();
     buffers->unbindCurrentFrameBuffer();
     camera.Position.y += distance;
