@@ -248,12 +248,6 @@ int main() {
   WaterFrameBuffers *buffers = new WaterFrameBuffers();
   waterRenderer =
       new WaterRenderer(loader, waterShader, glm::mat4(1.0), *buffers);
-  // std::vector<Water> waters;
-  // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2,
-  // chunkHeight/2));
-
-  // GLuint rectangleVAO;
-  // generate_rectangle(rectangleVAO);
 
   for (int y = 0; y < yMapChunks; y++)
     for (int x = 0; x < xMapChunks; x++) {
@@ -272,12 +266,6 @@ int main() {
   setup_instancing(flowerVAO, flower_chunks, "flower", plants,
                    "../resources/obj/Flowers.obj");
 
-  // std::vector<Water> waters;
-  // waters.push_back(Water(originX, originY, 0.1 * meshHeight, chunkWidth/2,
-  // chunkHeight/2));
-
-  // glBindVertexArray(rectangleVAO);
-  // glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
   while (!glfwWindowShouldClose(window)) {
     glEnable(GL_CLIP_DISTANCE0);
