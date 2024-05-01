@@ -28,8 +28,8 @@
 #include <unordered_set>
 
 using namespace std;
-GLint WIDTH = 1920, HEIGHT = 1080;
-//GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
+// GLint WIDTH = 1920, HEIGHT = 1080;
+GLint WIDTH = 3000, HEIGHT = 2000; // For mac display
 
 // Structs
 struct plant {
@@ -92,6 +92,8 @@ vector<int> fogKeys;
 vector<string> fogTypes;
 bool GRASS_ENABLED = false;
 bool SKY_BOX_ENABLED = false;
+int SKY_BOX_INDEX = 0;
+bool WATER_ENABLED = false;
 
 float skyboxVertices[] = {
     // positions
@@ -203,16 +205,10 @@ int main() {
   glEnableVertexAttribArray(0);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
 
-  skybox_names = {
-      "bright",
-      "dusk",
-      "mountains",
-      "sunny",
-  };
+  skybox_names = {"bright", "dusk", "mountains", "sunny"};
 
-  skybox_faces = {
-      "right.jpg", "left.jpg", "top.jpg", "bottom.jpg", "front.jpg", "back.jpg",
-  };
+  skybox_faces = {"right.jpg",  "left.jpg",  "top.jpg",
+                  "bottom.jpg", "front.jpg", "back.jpg"};
 
   faces = {"", "", "", "", "", ""};
 
@@ -225,8 +221,8 @@ int main() {
   fogShader.setVec3("light.diffuse", 0.3, 0.3, 0.3);
   fogShader.setVec3("light.specular", 1.0, 1.0, 1.0);
   fogShader.setVec3("light.direction", -1.0f, 1.0f, 1.0f);
-  fogShader.setFloat("distance",
-                     max(chunkWidth, chunkHeight) * chunk_render_distance * 2);
+  fogShader.setFloat("distance", max(chunkWidth, chunkHeight) *
+                                     chunk_render_distance * 2.5);
   fogKeys.push_back(GLFW_KEY_0);
   fogKeys.push_back(GLFW_KEY_1);
   fogKeys.push_back(GLFW_KEY_2);
@@ -266,7 +262,6 @@ int main() {
   setup_instancing(flowerVAO, flower_chunks, "flower", plants,
                    "../resources/obj/Flowers.obj");
 
-
   while (!glfwWindowShouldClose(window)) {
     glEnable(GL_CLIP_DISTANCE0);
 
@@ -279,39 +274,59 @@ int main() {
     fogShader.setMat4("u_view", view);
     fogShader.setVec3("u_viewPos", camera.Position);
 
-    // Render reflection
-    buffers->bindReflectionFrameBuffer();
-    float distance = 2 * (camera.Position.y - water_plane_height);
-    camera.Position.y -= distance; // Move the camera below the water for this
-                                   // reflection rendering
-    camera.Pitch = -camera.Pitch;  // Also invert the pitch
+    if (WATER_ENABLED) {
+      // Render reflection
+      buffers->bindReflectionFrameBuffer();
+      float distance = 2 * (camera.Position.y - water_plane_height);
+      camera.Position.y -= distance; // Move the camera below the water for this
+                                     // reflection rendering
+      camera.Pitch = -camera.Pitch;  // Also invert the pitch
 
-    render(map_chunks, fogShader, view, model, projection, nIndices,
-           tree_chunks, flower_chunks, glm::vec4(0, 1, 0, -water_plane_height));
-           
-    fogShader.use();
-    buffers->unbindCurrentFrameBuffer();
-    camera.Position.y += distance;
-    camera.Pitch = -camera.Pitch;
-    // Render refraction
-    buffers->bindRefractionFrameBuffer();
-    render(map_chunks, fogShader, view, model, projection, nIndices,
-           tree_chunks, flower_chunks, glm::vec4(0, -1, 0, water_plane_height));
-    buffers->unbindCurrentFrameBuffer();
+      render(map_chunks, fogShader, view, model, projection, nIndices,
+             tree_chunks, flower_chunks,
+             glm::vec4(0, 1, 0, -water_plane_height));
 
-    // Render onto the actual display's FBO
-    glDisable(GL_CLIP_DISTANCE0);
-    render(
-        map_chunks, fogShader, view, model, projection, nIndices, tree_chunks,
-        flower_chunks,
-        glm::vec4(0, -1, 0, water_plane_height)); // The last argument for this
-                                                  // call is just a dummy value
+      fogShader.use();
+      buffers->unbindCurrentFrameBuffer();
+      camera.Position.y += distance;
+      camera.Pitch = -camera.Pitch;
+      // Render refraction
+      buffers->bindRefractionFrameBuffer();
+      render(map_chunks, fogShader, view, model, projection, nIndices,
+             tree_chunks, flower_chunks,
+             glm::vec4(0, -1, 0, water_plane_height));
+      buffers->unbindCurrentFrameBuffer();
 
-    waterShader.use();
-    // Render water tiles
-    waterRenderer->loadProjectionMatrix(
-        projection); // Must update for every loop
-    waterRenderer->render(camera);
+      // Render onto the actual display's FBO
+      glDisable(GL_CLIP_DISTANCE0);
+
+      render(map_chunks, fogShader, view, model, projection, nIndices,
+             tree_chunks, flower_chunks,
+             glm::vec4(0, -1, 0,
+                       water_plane_height)); // The last argument for this
+                                             // call is just a dummy value
+      waterShader.use();
+      // Render water tiles
+      waterRenderer->loadProjectionMatrix(
+          projection); // Must update for every loop
+      waterRenderer->render(camera);
+    } else {
+      glClearColor(0.0, 0.0, 0.0, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      // glutSwapBuffers();
+      fogShader.use();
+      render(map_chunks, fogShader, view, model, projection, nIndices,
+             tree_chunks, flower_chunks,
+             glm::vec4(0, -1, 0,
+                       water_plane_height)); // The last argument for this
+      // call is just a dummy value
+
+      waterShader.use();
+      // Render water tiles
+      waterRenderer->loadProjectionMatrix(
+          projection); // Must update for every loop
+      waterRenderer->render(camera);
+    }
 
     // -------- Grass -----------
     grassShader.use();
@@ -436,7 +451,12 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view,
   gridPosX = (int)(camera.Position.x - originX) / chunkWidth + xMapChunks / 2;
   gridPosY = (int)(camera.Position.z - originY) / chunkHeight + yMapChunks / 2;
 
-  shader.setVec4("plane", clip_plane);
+  if (WATER_ENABLED) {
+    shader.setVec4("plane", clip_plane);
+  } else {
+    shader.setVec4("plane", glm::vec4(0, 0, 0, 0));
+  }
+
   // Render map chunks
   for (int y = 0; y < yMapChunks; y++)
     for (int x = 0; x < xMapChunks; x++) {
@@ -453,15 +473,16 @@ void render(std::vector<GLuint> &map_chunks, Shader &shader, glm::mat4 &view,
         glBindVertexArray(map_chunks[x + y * xMapChunks]);
         glDrawElements(GL_TRIANGLES, nIndices, GL_UNSIGNED_INT, 0);
 
-        //plant chunks;
+        // plant chunks;
         // model = glm::mat4(1.0f);
-        // model = glm::translate(model, glm::vec3(-chunkWidth / 2.0 +
-        // (chunkWidth - 1) * x, 0.0, -chunkHeight / 2.0 + (chunkHeight - 1) *
-        // y)); model = glm::scale(model, glm::vec3(MODEL_SCALE));
-        // shader.setMat4("u_model", model);
+        // model = glm::translate(
+        // model, glm::vec3(-chunkWidth / 2.0 + (chunkWidth - 1) * x, 0.0,
+        //  -chunkHeight / 2.0 + (chunkHeight - 1) * y));
+        // glm::mat4 scaled_model = glm::scale(model, glm::vec3(MODEL_SCALE));
+        // shader.setMat4("u_model", scaled_model);
 
         // glEnable(GL_CULL_FACE);
-        // glBindVertexArray(tree_chunks[x + y*xMapChunks]);
+        // glBindVertexArray(tree_chunks[x + y * xMapChunks]);
         // glDrawArraysInstanced(GL_TRIANGLES, 0, 10192, 8);
 
         // glBindVertexArray(flower_chunks[x + y*xMapChunks]);
@@ -717,12 +738,13 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
   // NOTE: Terrain color height is a value between 0 and 1
   biomeColors.push_back(
       terrainColor(WATER_HEIGHT * 0.5, get_color(162, 232, 255))); // Deep water
-  biomeColors.push_back(
-      terrainColor(WATER_HEIGHT, get_color(162, 232, 232)));
-//   biomeColors.push_back(
-//       terrainColor(WATER_HEIGHT * 0.5, get_color(60, 95, 190))); // Deep water
-//   biomeColors.push_back(
-//       terrainColor(WATER_HEIGHT, get_color(60, 100, 190))); // Shallow water
+  biomeColors.push_back(terrainColor(WATER_HEIGHT, get_color(162, 232, 232)));
+  //   biomeColors.push_back(
+  //       terrainColor(WATER_HEIGHT * 0.5, get_color(60, 95, 190))); // Deep
+  //       water
+  //   biomeColors.push_back(
+  //       terrainColor(WATER_HEIGHT, get_color(60, 100, 190))); // Shallow
+  //       water
   biomeColors.push_back(terrainColor(0.25, get_color(210, 215, 130))); // Sand
   biomeColors.push_back(
       terrainColor(GRASS_1_HEIGHT, get_color(95, 165, 30))); // Grass 1
@@ -738,7 +760,8 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
 
   // Determine which color to assign each vertex by its y-coord
   // Iterate through vertex y values
-  for (int i = 1; i < vertices.size(); i += 3) { // x, y, z, so look at every y value
+  for (int i = 1; i < vertices.size();
+       i += 3) { // x, y, z, so look at every y value
     int k = 0;
     for (int j = 0; j < biomeColors.size(); j++) {
       // NOTE: The max height of a vertex is "meshHeight"
@@ -752,7 +775,7 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
               plantType = "tree";
             }
             plants.push_back(plant{plantType, vertices[i - 1], vertices[i],
-                             vertices[i + 1], xOffset, yOffset});
+                                   vertices[i + 1], xOffset, yOffset});
           }
         }
         k = j;
@@ -761,19 +784,19 @@ std::vector<float> generate_biome(const std::vector<float> &vertices,
     }
 
     if (k > 0 && k < biomeColors.size() - 2) {
-        glm::vec3 prevColor = biomeColors[k - 1].color;
-        glm::vec3 currColor = biomeColors[k].color;
+      glm::vec3 prevColor = biomeColors[k - 1].color;
+      glm::vec3 currColor = biomeColors[k].color;
 
-        float prevHeight = biomeColors[k - 1].height * meshHeight;
-        float currHeight = biomeColors[k].height * meshHeight;
+      float prevHeight = biomeColors[k - 1].height * meshHeight;
+      float currHeight = biomeColors[k].height * meshHeight;
 
-        float t = (vertices[i] - prevHeight) / (currHeight - prevHeight);
+      float t = (vertices[i] - prevHeight) / (currHeight - prevHeight);
 
-        float r = ((1 - t) * prevColor.r + t * currColor.r) * 255;
-        float g = ((1 - t) * prevColor.g + t * currColor.g) * 255;
-        float b = ((1 - t) * prevColor.b + t * currColor.b) * 255;
+      float r = ((1 - t) * prevColor.r + t * currColor.r) * 255;
+      float g = ((1 - t) * prevColor.g + t * currColor.g) * 255;
+      float b = ((1 - t) * prevColor.b + t * currColor.b) * 255;
 
-        color = get_color(r, g, b);
+      color = get_color(r, g, b);
     }
     colors.push_back(color.r);
     colors.push_back(color.g);
@@ -913,63 +936,63 @@ std::vector<float> generate_snowy_grass_vertices(std::vector<float> &vertices) {
 
 void add_local_water(unordered_set<int> &visited, std::vector<float> &vertices,
                      std::vector<float> &water_vertices, int start_idx) {
-    if (visited.find(start_idx) != visited.end()) {
-        return;
-    }
+  if (visited.find(start_idx) != visited.end()) {
+    return;
+  }
 
-    int num_cols = 3 * chunkWidth;
-    int num_rows = chunkHeight + 1;
+  int num_cols = 3 * chunkWidth;
+  int num_rows = chunkHeight + 1;
 
-    queue<int> q;
-    vector<pair<int, int>> neighbors = {
-        {-1, 0}, {1, 0}, {0, -3}, {0, 3} // Up, down, left, right
-    }; // Heights are exactly aligned across rows, but off by three across columns
-    q.push(start_idx);
-    visited.insert(start_idx);
+  queue<int> q;
+  vector<pair<int, int>> neighbors = {
+      {-1, 0}, {1, 0}, {0, -3}, {0, 3} // Up, down, left, right
+  }; // Heights are exactly aligned across rows, but off by three across columns
+  q.push(start_idx);
+  visited.insert(start_idx);
 
-    float max_x = -10000;
-    float min_x = 10000;
-    float max_z = -10000;
-    float min_z = 10000;
+  float max_x = -10000;
+  float min_x = 10000;
+  float max_z = -10000;
+  float min_z = 10000;
 
-    while (!q.empty()) {
-        int curr_idx = q.front();
-        q.pop();
+  while (!q.empty()) {
+    int curr_idx = q.front();
+    q.pop();
 
-        int curr_row = curr_idx / num_cols;
-        int curr_col = curr_idx % num_cols;
+    int curr_row = curr_idx / num_cols;
+    int curr_col = curr_idx % num_cols;
 
-        // Process the vertices here (check for min_x, max_x, min_z, max_z) and modify
-        // the mesh
-        max_x = std::max(vertices[curr_idx - 1], max_x);
-        min_x = std::min(vertices[curr_idx - 1], min_x);
-        max_z = std::max(vertices[curr_idx + 1], max_z);
-        min_z = std::min(vertices[curr_idx + 1], min_z);
-        vertices[curr_idx] = vertices[curr_idx] * -2; // To prevent z-fighting
+    // Process the vertices here (check for min_x, max_x, min_z, max_z) and
+    // modify the mesh
+    max_x = std::max(vertices[curr_idx - 1], max_x);
+    min_x = std::min(vertices[curr_idx - 1], min_x);
+    max_z = std::max(vertices[curr_idx + 1], max_z);
+    min_z = std::min(vertices[curr_idx + 1], min_z);
+    vertices[curr_idx] = vertices[curr_idx] * -2; // To prevent z-fighting
 
-        for (const auto &neighbor : neighbors) {
-            int dr = neighbor.first;
-            int dc = neighbor.second;
-            int new_row = curr_row + dr;
-            int new_col = curr_col + dc;
+    for (const auto &neighbor : neighbors) {
+      int dr = neighbor.first;
+      int dc = neighbor.second;
+      int new_row = curr_row + dr;
+      int new_col = curr_col + dc;
 
-            // Check if the new cell is within the grid bounds and not visited
-            if (new_row >= 0 && new_row < num_rows && new_col >= 0 &&
-                new_col < num_cols) {
-                int new_idx = new_row * num_cols + new_col;
+      // Check if the new cell is within the grid bounds and not visited
+      if (new_row >= 0 && new_row < num_rows && new_col >= 0 &&
+          new_col < num_cols) {
+        int new_idx = new_row * num_cols + new_col;
 
-                if (visited.find(new_idx) == visited.end() &&
-                    vertices[new_idx] <= WATER_HEIGHT * meshHeight) {
-                    q.push(new_idx);
-                    visited.insert(new_idx);
-                }
-            }
+        if (visited.find(new_idx) == visited.end() &&
+            vertices[new_idx] <= WATER_HEIGHT * meshHeight) {
+          q.push(new_idx);
+          visited.insert(new_idx);
         }
+      }
     }
+  }
 
-    water_vertices.insert(water_vertices.end(),
+  water_vertices.insert(water_vertices.end(),
                         {min_x, min_z, min_x, max_z, max_x, min_z, max_x, min_z,
-                        min_x, max_z, max_x, max_z});
+                         min_x, max_z, max_x, max_z});
 }
 
 std::vector<float> generate_water_vertices(std::vector<float> &vertices) {
@@ -1115,6 +1138,17 @@ void processInput(GLFWwindow *window, Shader &shader) {
   if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
       glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS) {
     GRASS_ENABLED = false;
+  }
+
+  // Enable water
+  if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+    WATER_ENABLED = true;
+  }
+
+  // Disable water
+  if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS &&
+      glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
+    WATER_ENABLED = false;
   }
 
   // Enable random skybox
