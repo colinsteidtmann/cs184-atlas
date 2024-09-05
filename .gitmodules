@@ -19,3 +19,6 @@
     url = https://github.com/nothings/stb.git
     branch = main
 
+[submodule "cs184-atlas"]
+	path = cs184-atlas
+	url = git@github.com:colinsteidtmann/cs184-atlas.git
